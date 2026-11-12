@@ -63,148 +63,257 @@ footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
 .recapgrid>div{flex:1;min-width:100px}
 .toprow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
 .toprow:last-child{border-bottom:none}
+
+/* ===== v1.2: organized tabs, artwork, mini-player ===== */
+body{padding-bottom:175px}
+.card{border-radius:18px}
+.card h2{font-size:20px}
+.apphead{position:sticky;top:-8px;z-index:6;background:rgba(18,16,14,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:10px 4px 8px;margin:-14px -4px 12px;border-bottom:1px solid var(--line)}
+.apphead h1{margin:0}
+#greeting{font-size:27px;font-weight:800;margin:4px 0 0}
+.art{width:48px;height:48px;border-radius:10px;object-fit:cover;flex:none;background:var(--card2)}
+.art.round{border-radius:50%}
+.avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;flex:none;background:var(--card2)}
+.tile{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none;font-size:17px}
+#recentList{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.rcard{min-width:138px;max-width:138px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;cursor:pointer;flex:none}
+.rcard .rtile{height:82px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;overflow:hidden}
+.rcard .rtile img{width:100%;height:100%;object-fit:cover}
+.rcard .rt{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:8px;font-size:14px}
+.rcard .ra{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank{font-weight:800;color:var(--muted);width:24px;text-align:center;flex:none;font-size:15px}
+.prog{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.prog>i{display:block;height:100%;background:var(--accent2);width:0}
+#miniBar{position:fixed;left:8px;right:8px;bottom:74px;max-width:704px;margin:0 auto;background:rgba(40,35,31,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;padding:8px 10px;display:flex;gap:10px;align-items:center;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#miniBar.hidden{display:none}
+#miniBar .grow{flex:1;min-width:0;cursor:pointer}
+#miniBar .t{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#miniBar .a{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#miniBar button{width:48px;height:48px;border-radius:50%;padding:0;font-size:18px;flex:none}
+#miniPlay{background:var(--accent);border-color:var(--accent);color:#fff}
+#tabBar{position:fixed;left:0;right:0;bottom:0;z-index:21;background:rgba(24,21,18,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;max-width:720px;margin:0 auto}
+#tabBar button{flex:1;background:none;border:none;border-radius:0;color:var(--muted);font-size:12px;min-height:62px;padding:6px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
+#tabBar button .ti{font-size:21px}
+#tabBar button.active{color:var(--accent);font-weight:700}
 </style>
 </head>
 <body>
-<h1>🎵 Culture Player</h1>
-<p class="sub">Low-data music. Your own files play at <b>0 data</b>, offline. Spotify connects the official way.</p>
-<div class="row" style="margin-bottom:14px">
-  <span class="big" id="greeting">Hello</span>
-  <span class="pill on" id="netPill">● Online</span>
-</div>
-
-<div class="card" id="recentCard">
-  <h2>⏪ Jump back in</h2>
-  <div id="recentList"></div>
-  <p class="muted" id="recentEmpty">Nothing played yet — your recently played songs will show here.</p>
-</div>
-
-<div class="card" id="meterCard">
-  <h2>📊 Today</h2>
-  <div class="row">
-    <div style="flex:1"><div class="big" id="meterPlays">0 plays</div><div class="muted">local songs played today</div></div>
-    <div style="flex:1"><div class="big" id="meterData">0 MB</div><div class="muted">data used by local plays</div></div>
-    <div style="flex:1"><div class="big" id="meterSaved">~0 MB</div><div class="muted">saved vs streaming (~1.2 MB/min)</div></div>
+<header class="apphead">
+  <div class="row" style="justify-content:space-between">
+    <h1>🎵 Culture Player</h1>
+    <span class="pill on" id="netPill">● Online</span>
   </div>
-</div>
+  <div id="greeting">Hello</div>
+  <p class="sub">Low-data music. Your own files play at <b>0 data</b>, offline. Spotify connects the official way.</p>
+</header>
 
-<div class="card" id="recapCard">
-  <h2>📈 Your Recap</h2>
-  <div class="recapgrid">
-    <div><div class="big" id="recapToday">0 min</div><div class="muted">minutes today</div></div>
-    <div><div class="big" id="recapWeek">0 min</div><div class="muted">minutes this week</div></div>
-    <div><div class="big" id="recapAll">0 min</div><div class="muted">minutes all time</div></div>
-    <div><div class="big" id="recapSongs">0</div><div class="muted">songs played</div></div>
+<div id="secHome" class="tabsec">
+  <div class="card" id="recentCard">
+    <h2>⏪ Jump back in</h2>
+    <div id="recentList"></div>
+    <p class="muted" id="recentEmpty">Nothing played yet — your recently played songs will show here.</p>
   </div>
-  <h2 style="margin-top:14px">🏆 Top songs by minutes</h2>
-  <div id="topSongs"><p class="muted">Play some songs and your top songs will show here.</p></div>
-  <h2 style="margin-top:14px">🎤 Top artists by minutes</h2>
-  <div id="topArtists"><p class="muted">Your top artists will show here.</p></div>
-  <p class="muted">Minutes are counted inside Culture Player, while it is open — for your own files, and for Spotify songs you start from here while it stays connected. Spotify's own stats and Wrapped count everything on Spotify's side separately.</p>
-</div>
 
-<div class="card" id="playerCard">
-  <div class="muted">Now playing</div>
-  <div class="big" id="nowTitle">Nothing yet — add a song below</div>
-  <div class="muted" id="nowArtist"></div>
-  <div class="banner" id="djBanner"></div>
-  <audio id="audio" preload="metadata"></audio>
-  <input type="range" id="seek" min="0" max="1000" value="0">
-  <div class="times"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
-  <div class="controls">
-    <button id="prevBtn" title="Previous">⏮</button>
-    <button id="playBtn" class="play" title="Play / pause">▶</button>
-    <button id="nextBtn" title="Next">⏭</button>
-  </div>
-  <div class="row">
-    <button id="shuffleBtn" class="small">🔀 Smart Shuffle</button>
-    <button id="likeBtn" class="small">🤍 Like</button>
-    <span class="muted">Volume</span>
-  </div>
-  <input type="range" id="volume" min="0" max="100" value="90">
-  <div id="djArtistWrap" class="row" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-  <h2>🎧 Auto DJ</h2>
-  <p class="muted">A set from your library, favourites (songs you finish most) first, calm → high energy. Text announcements only.</p>
-  <div class="row">
-    <button id="djStart" class="primary">▶ Start Auto DJ</button>
-    <button id="djStop">⏹ Stop Auto DJ</button>
-  </div>
-  <div class="msg" id="djMsg"></div>
-</div>
-
-<div class="card">
-  <h2>🎭 Moods</h2>
-  <div class="row" id="moodChips"></div>
-  <div class="row" style="margin-top:10px">
-    <button id="moodMixBtn" class="green">▶ Mood Mix</button>
-    <button id="moodDjBtn">🎧 DJ this mood</button>
-    <button id="clearMoodBtn" class="small">Show all</button>
-  </div>
-</div>
-
-<div class="card">
-  <h2>📁 Your music (0 data, offline)</h2>
-  <p class="muted">Add MP3 / M4A files from your phone. They are saved inside this app on your phone, so they still play with data off, even after you close it. Name files like <i>Artist - Title.mp3</i> for best results.</p>
-  <input type="file" id="fileInput" accept="audio/*" multiple>
-  <div style="height:10px"></div>
-  <input type="search" id="searchBox" placeholder="Search your songs…">
-  <div class="row" id="libTabs" style="margin-top:10px">
-    <button class="small tab active" data-libtab="all">All</button>
-    <button class="small tab" data-libtab="offline">Offline</button>
-    <button class="small tab" data-libtab="spotify">Spotify</button>
-    <button class="small tab" data-libtab="liked">Liked</button>
-  </div>
-  <div id="trackList" style="margin-top:8px"></div>
-  <p class="muted" id="libEmpty">No songs yet. Add some above.</p>
-</div>
-
-<div class="card">
-  <h2>🟢 Spotify (official connect)</h2>
-  <p class="muted">Connects with Spotify's official Web API. No password ever touches this app — Spotify's own login page handles that.</p>
-  <label>Your Spotify Client ID</label>
-  <input type="text" id="spClientId" placeholder="Paste Client ID here">
-  <div style="height:8px"></div>
-  <label>Redirect URI — add this EXACT address in your Spotify app settings:</label>
-  <textarea class="uri" id="spRedirect" rows="2" readonly></textarea>
-  <ol class="steps">
-    <li>Open developer.spotify.com/dashboard and tap <b>Create app</b> (any name).</li>
-    <li>In the app settings, add the Redirect URI shown above, exactly as shown, and save.</li>
-    <li>Copy the app's <b>Client ID</b> and paste it above.</li>
-    <li>Tap <b>Connect Spotify</b> below and log in on Spotify's page.</li>
-  </ol>
-  <div class="row">
-    <button id="spConnect" class="primary">Connect Spotify</button>
-    <button id="spDisconnect">Disconnect</button>
-  </div>
-  <div class="msg" id="spMsg"></div>
-  <div id="spContent" class="hidden">
-    <p class="big" id="spUser"></p>
-    <div class="row">
-      <button id="spLoadLiked" class="small green">Load my Liked Songs</button>
-      <button id="spLoadPlaylists" class="small">Load my playlists</button>
+  <div class="card">
+    <h2>📈 Your minutes</h2>
+    <div class="recapgrid">
+      <div><div class="big" id="homeRecapToday">0 min</div><div class="muted">minutes today</div></div>
+      <div><div class="big" id="homeRecapAll">0 min</div><div class="muted">minutes all time</div></div>
     </div>
-    <div id="spPlaylists" style="margin-top:8px"></div>
-    <div id="spTracks" style="margin-top:8px"></div>
+    <div class="row" style="margin-top:10px"><button class="small" data-goto="recap">See your full Recap →</button></div>
+  </div>
+
+  <div class="card" id="playerCard">
+    <div class="muted">Now playing</div>
+    <div class="big" id="nowTitle">Nothing yet — add a song below</div>
+    <div class="muted" id="nowArtist"></div>
+    <div class="banner" id="djBanner"></div>
+    <audio id="audio" preload="metadata"></audio>
+    <input type="range" id="seek" min="0" max="1000" value="0">
+    <div class="times"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
+    <div class="controls">
+      <button id="prevBtn" title="Previous">⏮</button>
+      <button id="playBtn" class="play" title="Play / pause">▶</button>
+      <button id="nextBtn" title="Next">⏭</button>
+    </div>
+    <div class="row">
+      <button id="shuffleBtn" class="small">🔀 Smart Shuffle</button>
+      <button id="likeBtn" class="small">🤍 Like</button>
+      <span class="muted">Volume</span>
+    </div>
+    <input type="range" id="volume" min="0" max="100" value="90">
+    <div id="djArtistWrap" class="row" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎧 Auto DJ</h2>
+    <p class="muted">A set from your library, favourites (songs you finish most) first, calm → high energy. Text announcements only.</p>
+    <div class="row">
+      <button id="djStart" class="primary">▶ Start Auto DJ</button>
+      <button id="djStop">⏹ Stop Auto DJ</button>
+    </div>
+    <div class="msg" id="djMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2>🎭 Moods</h2>
+    <div class="row" id="moodChips"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="moodMixBtn" class="green">▶ Mood Mix</button>
+      <button id="moodDjBtn">🎧 DJ this mood</button>
+      <button id="clearMoodBtn" class="small">Show all</button>
+    </div>
+  </div>
+
+  <div class="card" id="meterCard">
+    <h2>📊 Today</h2>
+    <div class="row">
+      <div style="flex:1"><div class="big" id="meterPlays">0 plays</div><div class="muted">local songs played today</div></div>
+      <div style="flex:1"><div class="big" id="meterData">0 MB</div><div class="muted">data used by local plays</div></div>
+      <div style="flex:1"><div class="big" id="meterSaved">~0 MB</div><div class="muted">saved vs streaming (~1.2 MB/min)</div></div>
+    </div>
   </div>
 </div>
 
-<div class="card">
-  <h2>⚙️ Settings</h2>
-  <div class="switch"><span>AutoMix — order sets calm → high energy</span><input type="checkbox" id="setAutomix"></div>
-  <div class="switch"><span>Auto DJ: keep playing — new set when one ends</span><input type="checkbox" id="setDjAutoplay"></div>
-  <div style="margin-top:12px">
-    <label>Daily data warning limit (MB) — for a future streaming feature, not used by local files</label>
-    <input type="number" id="setDataLimit" min="0" step="10">
+<div id="secLibrary" class="tabsec hidden">
+  <div class="card">
+    <h2>📁 Your music (0 data, offline)</h2>
+    <p class="muted">Add MP3 / M4A files from your phone. They are saved inside this app on your phone, so they still play with data off, even after you close it. Name files like <i>Artist - Title.mp3</i> for best results.</p>
+    <input type="file" id="fileInput" accept="audio/*" multiple>
+    <div style="height:10px"></div>
+    <input type="search" id="searchBox" placeholder="Search your songs…">
+    <div class="row" id="libTabs" style="margin-top:10px">
+      <button class="small tab active" data-libtab="all">All</button>
+      <button class="small tab" data-libtab="offline">Offline</button>
+      <button class="small tab" data-libtab="spotify">Spotify</button>
+      <button class="small tab" data-libtab="liked">Liked</button>
+    </div>
+    <div id="trackList" style="margin-top:8px"></div>
+    <p class="muted" id="libEmpty">No songs yet. Add some above.</p>
+  </div>
+
+  <div class="card">
+    <h2>⚙️ Settings</h2>
+    <div class="switch"><span>AutoMix — order sets calm → high energy</span><input type="checkbox" id="setAutomix"></div>
+    <div class="switch"><span>Auto DJ: keep playing — new set when one ends</span><input type="checkbox" id="setDjAutoplay"></div>
+    <div style="margin-top:12px">
+      <label>Daily data warning limit (MB) — for a future streaming feature, not used by local files</label>
+      <input type="number" id="setDataLimit" min="0" step="10">
+    </div>
+  </div>
+</div>
+
+<div id="secSpotify" class="tabsec hidden">
+  <div id="spContent" class="hidden">
+    <div class="card">
+      <div class="row">
+        <img id="spAvatar" class="avatar hidden" alt="">
+        <div style="flex:1;min-width:0">
+          <div class="big" id="spUser">Connected</div>
+          <div class="muted">Your Spotify, inside Culture Player</div>
+        </div>
+        <button id="spRefreshAll" class="small">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="card" id="spNowCard">
+      <h2>▶️ Now playing on Spotify</h2>
+      <div class="row">
+        <img id="spNowArt" class="art hidden" alt="">
+        <div style="flex:1;min-width:0">
+          <div class="t" id="spNowTitle" style="font-weight:700">Nothing playing right now</div>
+          <div class="a muted" id="spNowArtist"></div>
+          <div class="muted" id="spNowState">Start something in Spotify, or tap a song below.</div>
+        </div>
+        <button id="spNowRefresh" class="small">↻</button>
+      </div>
+      <div class="prog" style="margin-top:10px"><i id="spNowBarFill"></i></div>
+    </div>
+
+    <div class="card">
+      <h2>🕘 Recently played on Spotify</h2>
+      <div id="spRecentList"><p class="muted">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <h2>🏆 Your top on Spotify</h2>
+      <div class="row">
+        <button class="small tab active" data-topterm="short_term">Last 4 weeks</button>
+        <button class="small tab" data-topterm="medium_term">Last 6 months</button>
+      </div>
+      <h3 style="margin:14px 0 6px">Top tracks</h3>
+      <div id="spTopTracks"><p class="muted">Loading…</p></div>
+      <h3 style="margin:14px 0 6px">Top artists</h3>
+      <div id="spTopArtists"><p class="muted">Loading…</p></div>
+    </div>
+
+    <div class="card">
+      <h2>💚 Liked Songs &amp; playlists</h2>
+      <div class="row">
+        <button id="spLoadLiked" class="small green">Load my Liked Songs</button>
+        <button id="spLoadPlaylists" class="small">Load my playlists</button>
+      </div>
+      <div id="spPlaylists" style="margin-top:8px"></div>
+      <div id="spTracks" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🟢 Spotify (official connect)</h2>
+    <p class="muted">Connects with Spotify's official Web API. No password ever touches this app — Spotify's own login page handles that.</p>
+    <div id="spPresetNote" class="msg hidden"></div>
+    <div id="spClientWrap">
+      <label>Your Spotify Client ID</label>
+      <input type="text" id="spClientId" placeholder="Paste Client ID here">
+    </div>
+    <div style="height:8px"></div>
+    <label>Redirect URI — add this EXACT address in your Spotify app settings:</label>
+    <textarea class="uri" id="spRedirect" rows="2" readonly></textarea>
+    <ol class="steps" id="spSteps">
+      <li>Open developer.spotify.com/dashboard and tap <b>Create app</b> (any name).</li>
+      <li>In the app settings, add the Redirect URI shown above, exactly as shown, and save.</li>
+      <li>Copy the app's <b>Client ID</b> and paste it above.</li>
+      <li>Tap <b>Connect Spotify</b> below and log in on Spotify's page.</li>
+    </ol>
+    <div class="row">
+      <button id="spConnect" class="primary">Connect Spotify</button>
+      <button id="spDisconnect">Disconnect</button>
+    </div>
+    <div class="msg" id="spMsg"></div>
+  </div>
+</div>
+
+<div id="secRecap" class="tabsec hidden">
+  <div class="card" id="recapCard">
+    <h2>📈 Your Recap</h2>
+    <div class="recapgrid">
+      <div><div class="big" id="recapToday">0 min</div><div class="muted">minutes today</div></div>
+      <div><div class="big" id="recapWeek">0 min</div><div class="muted">minutes this week</div></div>
+      <div><div class="big" id="recapAll">0 min</div><div class="muted">minutes all time</div></div>
+      <div><div class="big" id="recapSongs">0</div><div class="muted">songs played</div></div>
+    </div>
+    <h2 style="margin-top:14px">🏆 Top songs by minutes</h2>
+    <div id="topSongs"><p class="muted">Play some songs and your top songs will show here.</p></div>
+    <h2 style="margin-top:14px">🎤 Top artists by minutes</h2>
+    <div id="topArtists"><p class="muted">Your top artists will show here.</p></div>
+    <p class="muted">Minutes are counted inside Culture Player, while it is open — for your own files, and for Spotify songs you start from here while it stays connected.</p>
+  </div>
+
+  <div class="card">
+    <h2>🟢 From your Spotify</h2>
+    <p class="muted">Straight from your Spotify account — your recently played and your tops, the way you see them on Spotify.</p>
+    <h3 style="margin:12px 0 6px">Recently played</h3>
+    <div id="recapSpRecent"><p class="muted">Connect Spotify to see this here.</p></div>
+    <h3 style="margin:14px 0 6px">Your tops</h3>
+    <div id="recapSpTops"><p class="muted">Connect Spotify to see this here.</p></div>
+    <p class="muted" style="margin-top:12px">One honest thing about minutes: Spotify does not share your total minutes listened with any app — not even this one. The minutes in Your Recap above are counted live by Culture Player, for everything you play through it. Spotify's own Wrapped counts your minutes separately, on Spotify's side.</p>
   </div>
 </div>
 
 <footer>
-  <p>Culture Player v1.1</p>
+  <p>Culture Player v1.2</p>
   <b>Honest limits.</b> Spotify songs cannot be downloaded for offline by this app — that is Spotify's rule. Offline here means your own files, which always play with data off.
-  Minutes played are counted inside Culture Player while it is open and connected, as described under Your Recap — Spotify's own stats and Wrapped still count everything on Spotify's side separately.
+  Minutes played are counted inside Culture Player while it is open and connected, as described under Your Recap — Spotify does not share your total minutes listened with any app, and Spotify's own Wrapped counts everything on Spotify's side separately.
   Spotify songs cannot be made low-bitrate by this app — Spotify controls that stream, and its quality setting lives in the Spotify app itself.
   Playing Spotify inside this page needs Spotify Premium (that is Spotify's own rule for its web player).
   Controlling Spotify needs an active Spotify device — open the Spotify app on your phone once so it shows up.
@@ -213,6 +322,22 @@ footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
   Auto DJ talks in text notes only, there is no DJ voice.
 </footer>
 
+<div id="miniBar" class="hidden">
+  <div class="tile" id="miniArt">🎵</div>
+  <div class="grow" id="miniInfo">
+    <div class="t" id="miniTitle">Nothing playing</div>
+    <div class="a" id="miniArtist"></div>
+  </div>
+  <button id="miniPlay" title="Play / pause">▶</button>
+  <button id="miniNext" title="Next">⏭</button>
+</div>
+
+<nav id="tabBar">
+  <button data-maintab="home" class="active"><span class="ti">🏠</span>Home</button>
+  <button data-maintab="library"><span class="ti">🎵</span>Library</button>
+  <button data-maintab="spotify"><span class="ti">🟢</span>Spotify</button>
+  <button data-maintab="recap"><span class="ti">📈</span>Recap</button>
+</nav>
 <script>
 "use strict";
 /* ============ helpers ============ */
@@ -292,6 +417,7 @@ function renderRecap(){
   $("recapWeek").textContent=fmtMinutes(weekSec);
   $("recapAll").textContent=fmtMinutes(allSec);
   $("recapSongs").textContent=totalPlays.toLocaleString("en");
+  if($("homeRecapToday")){$("homeRecapToday").textContent=fmtMinutes(todaySec);$("homeRecapAll").textContent=fmtMinutes(allSec);}
   var songMap={},artistMap={};
   tracks.forEach(function(t){if(!(t.secondsListened>0))return;var k=(t.title+"|"+t.artist).toLowerCase();songMap[k]=songMap[k]||{label:t.title+" — "+t.artist,sec:0};songMap[k].sec+=t.secondsListened;artistMap[t.artist]=artistMap[t.artist]||{label:t.artist,sec:0};artistMap[t.artist].sec+=t.secondsListened;});
   var sp=loadSpStats();Object.keys(sp).forEach(function(uri){var s=sp[uri];if(!(s.seconds>0))return;var k=((s.title||"Unknown")+"|"+(s.artist||"Unknown artist")).toLowerCase();songMap[k]=songMap[k]||{label:(s.title||"Unknown")+" — "+(s.artist||"Unknown artist"),sec:0};songMap[k].sec+=s.seconds;var an=s.artist||"Unknown artist";artistMap[an]=artistMap[an]||{label:an,sec:0};artistMap[an].sec+=s.seconds;});
@@ -319,13 +445,13 @@ function renderRecent(){
   $("recentEmpty").style.display=has?"none":"block";
   var html="";
   recentPlays.slice(0,12).forEach(function(r){
-    html+='<div class="track" data-recent-kind="'+esc(r.kind)+'" data-recent-key="'+esc(r.key)+'"><div class="grow"><div class="t">'+esc(r.title)+'</div><div class="a">'+esc(r.artist)+" · "+fmtAgo(r.ts)+'</div><div><span class="badge '+(r.kind==="spotify"?"spotify":"offline")+'">'+(r.kind==="spotify"?"SPOTIFY":"OFFLINE")+"</span></div></div></div>";
+    html+='<div class="rcard" data-recent-kind="'+esc(r.kind)+'" data-recent-key="'+esc(r.key)+'"><div class="rtile" style="background:'+artGrad(r.artist||r.title)+'">'+esc(initialsOf(r.artist||r.title))+'</div><div class="rt">'+esc(r.title)+'</div><div class="ra">'+esc(r.artist)+'</div><div class="ra">'+fmtAgo(r.ts)+'</div><span class="badge '+(r.kind==="spotify"?"spotify":"offline")+'">'+(r.kind==="spotify"?"SPOTIFY":"OFFLINE")+"</span></div>";
   });
   $("recentList").innerHTML=html;
   Array.prototype.forEach.call(document.querySelectorAll("[data-recent-key]"),function(el){el.addEventListener("click",function(){
     var kind=el.getAttribute("data-recent-kind"),key=el.getAttribute("data-recent-key");
     if(kind==="local"){var t=trackById(key);if(t)playQueue(tracks.slice(),key);else showMsg($("djMsg"),"That song is no longer in your library.",true);}
-    else{if(!navigator.onLine){showMsg($("spMsg"),"You're offline — Spotify songs need data. Your OFFLINE songs still play.",true);return;}spPlayOnDevice(key);}
+    else{if(!navigator.onLine){showMsg($("spMsg"),"You're offline — Spotify songs need data. Your OFFLINE songs still play.",true);showTab("spotify");return;}spPlayOnDevice(key);}
   });});
 }
 /* Online / offline status pill */
@@ -339,6 +465,33 @@ function renderNet(){
 window.addEventListener("online",renderNet);
 window.addEventListener("offline",renderNet);
 (function(){var h=new Date().getHours();$("greeting").textContent=h<12?"Good morning":(h<18?"Good afternoon":"Good evening");})();
+
+
+/* ============ v1.2: artwork tiles, tabs, mini-player ============ */
+function initialsOf(s){s=(s||"?").trim();var p=s.split(/\s+/);return (((p[0]||"?").charAt(0))+((p[1]||"").charAt(0))).toUpperCase();}
+function artGrad(s){var h=0;s=String(s||"");for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;var pal=[["#e07840","#8a3324"],["#7a9a5c","#2e4423"],["#4a7fb5","#23395e"],["#8a5fb0","#3a2358"],["#c2a13a","#6e5410"],["#3fa08c","#17453c"]];var pr=pal[h%pal.length];return "linear-gradient(135deg,"+pr[0]+","+pr[1]+")";}
+var TABSECS={home:"secHome",library:"secLibrary",spotify:"secSpotify",recap:"secRecap"};
+function showTab(name){
+  if(!TABSECS[name])name="home";
+  Object.keys(TABSECS).forEach(function(k){$(TABSECS[k]).classList.toggle("hidden",k!==name);});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-maintab]"),function(el){el.classList.toggle("active",el.getAttribute("data-maintab")===name);});
+  try{window.scrollTo(0,0);}catch(e){}
+}
+Array.prototype.forEach.call(document.querySelectorAll("[data-maintab]"),function(el){el.addEventListener("click",function(){showTab(el.getAttribute("data-maintab"));});});
+Array.prototype.forEach.call(document.querySelectorAll("[data-goto]"),function(el){el.addEventListener("click",function(){showTab(el.getAttribute("data-goto"));});});
+function syncMini(){
+  var t=(typeof trackById==="function")?trackById(currentId):null;
+  if(!t){$("miniBar").classList.add("hidden");return;}
+  $("miniBar").classList.remove("hidden");
+  $("miniTitle").textContent=t.title;$("miniArtist").textContent=t.artist;
+  var ma=$("miniArt");ma.textContent=initialsOf(t.artist);ma.style.background=artGrad(t.artist);
+}
+$("miniInfo").addEventListener("click",function(){showTab("home");});
+$("miniPlay").addEventListener("click",function(){
+  if(!currentId&&tracks.length){playQueue(smartShuffleQueue(tracks));return;}
+  if(audio.paused)audio.play();else audio.pause();
+});
+$("miniNext").addEventListener("click",function(){nextTrack(false);});
 
 /* ============ IndexedDB ============ */
 var dbPromise=new Promise(function(res,rej){
@@ -376,7 +529,9 @@ var spCache=[]; /* normalized Spotify tracks from the last load: {uri,title,arti
 function spRowHtml(tr){
   var tags=(tr.moods||[]).map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
   var off=!isOnline();
-  return '<div class="track'+(off?" dimmed":"")+'"><div class="grow"><div class="t">'+esc(tr.title)+'</div><div class="a">'+esc(tr.artist)+'</div><div><span class="badge spotify">SPOTIFY</span>'+tags+'</div></div>'
+  var art=tr.img?('<img class="art" loading="lazy" src="'+esc(tr.img)+'" alt="">'):('<div class="tile" style="background:'+artGrad(tr.artist)+'">'+esc(initialsOf(tr.artist))+"</div>");
+  var dur=tr.durationMs?(" · "+fmtTime(tr.durationMs/1000)):"";
+  return '<div class="track'+(off?" dimmed":"")+'">'+art+'<div class="grow"><div class="t">'+esc(tr.title)+'</div><div class="a">'+esc(tr.artist)+dur+'</div><div><span class="badge spotify">SPOTIFY</span>'+tags+'</div></div>'
     +'<button class="small" data-spplay="'+esc(tr.uri)+'">▶ Play</button>'
     +'<button class="small" data-spweb="'+esc(tr.uri)+'">Play here*</button></div>';
 }
@@ -404,6 +559,7 @@ function renderLibrary(){
   list.forEach(function(t){
     var tags=(t.moods||[]).map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
     html+='<div class="track'+(t.id===currentId?" playing":"")+'" data-play="'+esc(t.id)+'">'
+      +'<div class="tile" style="background:'+artGrad(t.artist)+'">'+esc(initialsOf(t.artist))+"</div>"
       +'<div class="grow"><div class="t">'+esc(t.title)+'</div><div class="a">'+esc(t.artist)+" · "+(Math.round(t.size/1024/10.24)/100)+" MB · ▶ "+(t.plays||0)+" · ⏱ "+fmtMinutes(t.secondsListened||0)+'</div><div><span class="badge offline">OFFLINE</span>'+tags+"</div></div>"
       +'<button class="heart'+(t.liked?" liked":"")+'" data-like="'+esc(t.id)+'">'+(t.liked?"❤️":"🤍")+"</button>"
       +'<button class="small" data-del="'+esc(t.id)+'">Delete</button></div>';
@@ -429,7 +585,7 @@ function playTrack(t){
   if(curObjectUrl)URL.revokeObjectURL(curObjectUrl);
   curObjectUrl=URL.createObjectURL(t.blob);
   audio.src=curObjectUrl;currentId=t.id;countedPlayFor=null;listenedSec=0;lastTick=0;lastAudioPos=null;pendingLocalSec=0;
-  $("nowTitle").textContent=t.title;$("nowArtist").textContent=t.artist;
+  $("nowTitle").textContent=t.title;$("nowArtist").textContent=t.artist;syncMini();
   t.plays=(t.plays||0)+1;dbPut(t).catch(function(){});markRecent(t.id);
   addDayPlay();
   audio.play().catch(function(){});
@@ -493,8 +649,8 @@ $("djStop").addEventListener("click",function(){djMode=false;hideBanner();showMs
 $("moodMixBtn").addEventListener("click",function(){var pool=activeMood?tracks.filter(function(t){return (t.moods||[]).indexOf(activeMood)>=0;}):tracks;if(!pool.length)return;djMode=false;playQueue(shuffleArr(pool.slice()));});
 $("moodDjBtn").addEventListener("click",function(){djMood(activeMood);});
 $("clearMoodBtn").addEventListener("click",function(){activeMood=null;renderMoodChips();renderLibrary();});
-audio.addEventListener("play",function(){$("playBtn").textContent="⏸";});
-audio.addEventListener("pause",function(){$("playBtn").textContent="▶";});
+audio.addEventListener("play",function(){$("playBtn").textContent="⏸";$("miniPlay").textContent="⏸";});
+audio.addEventListener("pause",function(){$("playBtn").textContent="▶";$("miniPlay").textContent="▶";});
 audio.addEventListener("timeupdate",function(){
   if(audio.duration){$("seek").value=Math.round(audio.currentTime/audio.duration*1000);$("curTime").textContent=fmtTime(audio.currentTime);$("durTime").textContent=fmtTime(audio.duration);}
   /* Real minutes counting: only forward progress while playing counts.
@@ -548,9 +704,24 @@ dbAll().then(function(list){tracks=list.sort(function(a,b){return (a.addedAt||0)
 <script>
 "use strict";
 /* ============ Spotify — official Web API, Authorization Code + PKCE ============ */
+/* Tonda's Spotify app Client ID (public PKCE identifier) — patched in at publish time; user-entered ID in settings overrides it. */
+const PRESET_CLIENT_ID = "46c7c56f1e354543b23475623ecb89b3";
+function spClientId(){
+  var stored="";
+  try{stored=(localStorage.getItem("cp_spotify_client_id")||"").trim();}catch(e){}
+  if(stored)return stored;
+  var typed=($("spClientId")&&$("spClientId").value||"").trim();
+  if(typed)return typed;
+  return (PRESET_CLIENT_ID||"").trim();
+}
 function spRedirectUri(){return window.location.href.split("?")[0].split("#")[0];}
 $("spRedirect").value=spRedirectUri();
 $("spClientId").value=localStorage.getItem("cp_spotify_client_id")||"";
+if(!(localStorage.getItem("cp_spotify_client_id")||"").trim()&&(PRESET_CLIENT_ID||"").trim()){
+  $("spClientWrap").classList.add("hidden");
+  var sn=$("spPresetNote");sn.textContent="Spotify app is set up — just tap Connect Spotify.";sn.classList.remove("hidden");sn.classList.add("show");
+  var st=$("spSteps");if(st)st.classList.add("hidden");
+}
 $("spClientId").addEventListener("change",function(){localStorage.setItem("cp_spotify_client_id",$("spClientId").value.trim());});
 function spTokens(){try{return JSON.parse(localStorage.getItem("cp_spotify_tokens")||"null");}catch(e){return null;}}
 function spSaveTokens(t){localStorage.setItem("cp_spotify_tokens",JSON.stringify(t));}
@@ -558,12 +729,12 @@ function b64url(bytes){var s="";bytes.forEach(function(b){s+=String.fromCharCode
 function randomStr(len){var arr=new Uint8Array(len);crypto.getRandomValues(arr);var chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";var out="";arr.forEach(function(b){out+=chars[b%chars.length];});return out;}
 async function sha256b64url(str){var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));return b64url(new Uint8Array(buf));}
 $("spConnect").addEventListener("click",async function(){
-  var cid=$("spClientId").value.trim();
+  var cid=spClientId();
   if(!cid){showMsg($("spMsg"),"Paste your Client ID first (step 3 above).",true);return;}
   localStorage.setItem("cp_spotify_client_id",cid);
   var verifier=randomStr(64);localStorage.setItem("cp_spotify_verifier",verifier);
   var challenge=await sha256b64url(verifier);var state=randomStr(16);localStorage.setItem("cp_spotify_state",state);
-  var scopes="user-read-private user-read-email user-library-read playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state user-read-currently-playing streaming";
+  var scopes="user-read-private user-read-email user-library-read playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-recently-played user-top-read streaming";
   var url="https://accounts.spotify.com/authorize?response_type=code&client_id="+encodeURIComponent(cid)
     +"&scope="+encodeURIComponent(scopes)+"&redirect_uri="+encodeURIComponent(spRedirectUri())
     +"&state="+encodeURIComponent(state)+"&code_challenge_method=S256&code_challenge="+encodeURIComponent(challenge);
@@ -573,10 +744,14 @@ $("spDisconnect").addEventListener("click",function(){
   spStopPolling();spCache=[];spLastHeading="";
   localStorage.removeItem("cp_spotify_tokens");localStorage.removeItem("cp_spotify_verifier");
   $("spContent").classList.add("hidden");$("spUser").textContent="";$("spTracks").innerHTML="";$("spPlaylists").innerHTML="";
+  spRecentCache=[];spTopCache=null;
+  $("spRecentList").innerHTML="";$("spTopTracks").innerHTML="";$("spTopArtists").innerHTML="";
+  $("recapSpRecent").innerHTML='<p class="muted">Connect Spotify to see this here.</p>';$("recapSpTops").innerHTML='<p class="muted">Connect Spotify to see this here.</p>';
+  $("spAvatar").classList.add("hidden");
   showMsg($("spMsg"),"Disconnected. Your Client ID is kept above so reconnecting is quick.");
 });
 async function spExchangeCode(code){
-  var cid=localStorage.getItem("cp_spotify_client_id")||"";var verifier=localStorage.getItem("cp_spotify_verifier")||"";
+  var cid=spClientId();var verifier=localStorage.getItem("cp_spotify_verifier")||"";
   var body=new URLSearchParams({grant_type:"authorization_code",code:code,redirect_uri:spRedirectUri(),client_id:cid,code_verifier:verifier});
   var r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
   var d=await r.json();if(!r.ok)throw new Error(d.error_description||d.error||("Token exchange failed: "+r.status));
@@ -584,7 +759,7 @@ async function spExchangeCode(code){
 }
 async function spRefresh(){
   var t=spTokens();if(!t||!t.refresh_token)throw new Error("Not connected to Spotify.");
-  var cid=localStorage.getItem("cp_spotify_client_id")||"";
+  var cid=spClientId();
   var body=new URLSearchParams({grant_type:"refresh_token",refresh_token:t.refresh_token,client_id:cid});
   var r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
   var d=await r.json();if(!r.ok)throw new Error(d.error_description||d.error||("Refresh failed: "+r.status));
@@ -605,8 +780,12 @@ async function spFetch(path,opts){
 }
 async function spShowUser(){
   var me=await spFetch("/v1/me");
-  $("spUser").textContent="Connected as "+(me.display_name||me.id||"you");
+  $("spUser").textContent=me.display_name||me.id||"You";
+  var av=$("spAvatar");
+  if(me.images&&me.images.length&&me.images[0].url){av.src=me.images[0].url;av.classList.remove("hidden");}
+  else av.classList.add("hidden");
   $("spContent").classList.remove("hidden");
+  spLoadAll();
 }
 $("spLoadLiked").addEventListener("click",async function(){
   try{showMsg($("spMsg"),"Loading your Liked Songs…");var d=await spFetch("/v1/me/tracks?limit=50");renderSpTracks((d.items||[]).map(function(i){return i.track;}).filter(Boolean),"Your Liked Songs (first 50)");showMsg($("spMsg"),"Loaded.");}
@@ -626,7 +805,7 @@ function renderSpTracks(list,heading){
   spLastHeading=heading;
   spCache=list.map(function(tr){
     var artists=(tr.artists||[]).map(function(a){return a.name;}).join(", ");
-    return {uri:tr.uri,title:tr.name,artist:artists,moods:guessMoods(tr.name,artists,"")};
+    return {uri:tr.uri,title:tr.name,artist:artists,img:spImg(tr),durationMs:tr.duration_ms||0,moods:guessMoods(tr.name,artists,"")};
   });
   renderSpTracksFromCache();
   renderLibrary();
@@ -678,6 +857,7 @@ async function spPollTick(){
       spPollBusy=false;return;
     }
     spPollEmpty=0;
+    spRenderNowCard(data);
     var item=data.item,uri=item.uri;
     var title=item.name||"Unknown";
     var artist=(item.artists||[]).map(function(a){return a.name;}).join(", ")||"Unknown artist";
@@ -740,6 +920,120 @@ function spPlayHere(uri){
   sc.onerror=function(){showMsg($("spMsg"),"Could not load the Spotify player script. Check your data connection and try again.",true);};
   document.body.appendChild(sc);
 }
+
+/* ============ v1.2: real Spotify data — profile extras, now playing, recently played, tops ============ */
+function spImg(tr){
+  var imgs=(tr&&tr.album&&tr.album.images)||(tr&&tr.images)||[];
+  if(!imgs.length)return "";
+  var pick=imgs[imgs.length-1];
+  for(var i=0;i<imgs.length;i++){if((imgs[i].height||999)>=64&&(imgs[i].height||999)<=300){pick=imgs[i];break;}}
+  return pick.url||"";
+}
+var spRecentCache=[]; /* {uri,title,artist,img,durationMs,played_at} */
+var spTopCache=null;   /* {term, tracks:[{uri,title,artist,img}], artists:[{name,img,meta}]} */
+var spTopTerm="short_term";
+async function spLoadAll(){
+  try{await spLoadNowPlaying();}catch(e){}
+  try{await spLoadRecent();}catch(e){$("spRecentList").innerHTML='<p class="muted">Could not load your recently played. Tap ↻ Refresh above to try again.</p>';}
+  try{await spLoadTops();}catch(e){$("spTopTracks").innerHTML='<p class="muted">Could not load your tops. Tap ↻ Refresh above to try again.</p>';}
+}
+$("spRefreshAll").addEventListener("click",function(){spLoadAll();});
+$("spNowRefresh").addEventListener("click",function(){spLoadNowPlaying().catch(function(e){showMsg($("spMsg"),String(e.message||e),true);});});
+Array.prototype.forEach.call(document.querySelectorAll("[data-topterm]"),function(el){el.addEventListener("click",function(){
+  spTopTerm=el.getAttribute("data-topterm");
+  Array.prototype.forEach.call(document.querySelectorAll("[data-topterm]"),function(x){x.classList.toggle("active",x===el);});
+  spLoadTops().catch(function(){});
+});});
+function spRenderNowCard(data){
+  var titleEl=$("spNowTitle"),artEl=$("spNowArt");
+  if(!data||!data.item){
+    titleEl.textContent="Nothing playing right now";
+    $("spNowArtist").textContent="";
+    $("spNowState").textContent="Start something in Spotify, or tap a song below.";
+    artEl.classList.add("hidden");$("spNowBarFill").style.width="0";
+    return;
+  }
+  var item=data.item;
+  titleEl.textContent=item.name||"Unknown";
+  $("spNowArtist").textContent=(item.artists||[]).map(function(a){return a.name;}).join(", ");
+  var img=spImg(item);
+  if(img){artEl.src=img;artEl.classList.remove("hidden");}else artEl.classList.add("hidden");
+  var dur=(item.duration_ms||0),prog=(typeof data.progress_ms==="number")?data.progress_ms:0;
+  $("spNowBarFill").style.width=dur?Math.min(100,Math.round(prog/dur*100))+"%":"0";
+  var dev=(data.device&&data.device.name)?(" · on "+data.device.name):"";
+  $("spNowState").textContent=(data.is_playing?"▶ Playing":"⏸ Paused")+dev+" · "+fmtTime(prog/1000)+" / "+fmtTime(dur/1000);
+}
+async function spLoadNowPlaying(){
+  var data=await spFetch("/v1/me/player");
+  spRenderNowCard(data);
+  if(data&&data.item)spStartPolling();
+}
+function spRecentRowHtml(r,ranked){
+  var art=r.img?('<img class="art" loading="lazy" src="'+esc(r.img)+'" alt="">'):('<div class="tile" style="background:'+artGrad(r.artist)+'">'+esc(initialsOf(r.artist))+"</div>");
+  var when=r.played_at?(" · "+fmtAgo(Date.parse(r.played_at))):"";
+  var dur=r.durationMs?(" · "+fmtTime(r.durationMs/1000)):"";
+  return '<div class="track">'+(ranked?('<span class="rank">'+ranked+"</span>"):"")+art+'<div class="grow"><div class="t">'+esc(r.title)+'</div><div class="a">'+esc(r.artist)+when+dur+'</div><div><span class="badge spotify">SPOTIFY</span></div></div>'
+    +'<button class="small" data-spplay="'+esc(r.uri)+'">▶ Play</button>'
+    +'<button class="small" data-spweb="'+esc(r.uri)+'">Play here*</button></div>';
+}
+async function spLoadRecent(){
+  var d=await spFetch("/v1/me/player/recently-played?limit=30");
+  spRecentCache=(d.items||[]).map(function(i){
+    var tr=i.track;if(!tr)return null;
+    var artists=(tr.artists||[]).map(function(a){return a.name;}).join(", ");
+    return {uri:tr.uri,title:tr.name,artist:artists,img:spImg(tr),durationMs:tr.duration_ms||0,played_at:i.played_at||"",moods:guessMoods(tr.name,artists,"")};
+  }).filter(Boolean);
+  if(!spRecentCache.length){$("spRecentList").innerHTML='<p class="muted">Nothing here yet — play something on Spotify and it will show up.</p>';}
+  else $("spRecentList").innerHTML=spRecentCache.map(function(r){return spRecentRowHtml(r,0);}).join("");
+  bindSpButtons($("spRecentList"));
+  /* tapping a row (not just the buttons) plays it too */
+  Array.prototype.forEach.call($("spRecentList").querySelectorAll(".track"),function(el,idx){
+    el.addEventListener("click",function(e){if(e.target.closest("button"))return;var r=spRecentCache[idx];if(r)spPlayOnDevice(r.uri);});
+  });
+  renderRecapSp();
+}
+async function spLoadTops(){
+  var q="?time_range="+spTopTerm+"&limit=10";
+  var td=await spFetch("/v1/me/top/tracks"+q);
+  var ad=await spFetch("/v1/me/top/artists"+q);
+  var tracks=(td.items||[]).map(function(tr){
+    var artists=(tr.artists||[]).map(function(a){return a.name;}).join(", ");
+    return {uri:tr.uri,title:tr.name,artist:artists,img:spImg(tr),durationMs:tr.duration_ms||0,moods:guessMoods(tr.name,artists,"")};
+  });
+  var artists=(ad.items||[]).map(function(a){
+    var meta=[];
+    if(a.genres&&a.genres.length)meta.push(a.genres.slice(0,2).join(", "));
+    if(a.followers&&typeof a.followers.total==="number")meta.push(a.followers.total.toLocaleString("en")+" followers");
+    return {name:a.name,img:spImg(a),meta:meta.join(" · ")};
+  });
+  spTopCache={term:spTopTerm,tracks:tracks,artists:artists};
+  $("spTopTracks").innerHTML=tracks.length?tracks.map(function(r,i){return spRecentRowHtml(r,i+1);}).join(""):'<p class="muted">No top tracks for this period yet.</p>';
+  bindSpButtons($("spTopTracks"));
+  Array.prototype.forEach.call($("spTopTracks").querySelectorAll(".track"),function(el,idx){
+    el.addEventListener("click",function(e){if(e.target.closest("button"))return;var r=tracks[idx];if(r)spPlayOnDevice(r.uri);});
+  });
+  $("spTopArtists").innerHTML=artists.length?artists.map(function(a,i){
+    var art=a.img?('<img class="art round" loading="lazy" src="'+esc(a.img)+'" alt="">'):('<div class="tile" style="border-radius:50%;background:'+artGrad(a.name)+'">'+esc(initialsOf(a.name))+"</div>");
+    return '<div class="track"><span class="rank">'+(i+1)+"</span>"+art+'<div class="grow"><div class="t">'+esc(a.name)+'</div><div class="a">'+esc(a.meta)+"</div></div></div>";
+  }).join(""):'<p class="muted">No top artists for this period yet.</p>';
+  renderRecapSp();
+}
+function renderRecapSp(){
+  if(!$("recapSpRecent"))return;
+  if(spRecentCache.length){
+    $("recapSpRecent").innerHTML=spRecentCache.slice(0,8).map(function(r){
+      return '<div class="toprow"><span>'+esc(r.title)+" — "+esc(r.artist)+'</span><span class="muted">'+(r.played_at?fmtAgo(Date.parse(r.played_at)):"")+"</span></div>";
+    }).join("");
+  }
+  if(spTopCache&&(spTopCache.tracks.length||spTopCache.artists.length)){
+    var termLabel=spTopCache.term==="short_term"?"Last 4 weeks":"Last 6 months";
+    var h='<p class="muted">'+termLabel+"</p>";
+    spTopCache.tracks.slice(0,5).forEach(function(r,i){h+='<div class="toprow"><span>'+(i+1)+". "+esc(r.title)+" — "+esc(r.artist)+"</span></div>";});
+    spTopCache.artists.slice(0,5).forEach(function(a,i){h+='<div class="toprow"><span>🎤 '+(i+1)+". "+esc(a.name)+"</span></div>";});
+    $("recapSpTops").innerHTML=h;
+  }
+}
+
 /* handle ?code= return + restore session */
 (async function(){
   var params=new URLSearchParams(window.location.search);var code=params.get("code");var err=params.get("error");
