@@ -51,11 +51,33 @@ ol.steps li{margin:4px 0}
 .times{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
 footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
 .hidden{display:none}
+.pill{display:inline-block;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700;border:1px solid var(--line);background:var(--card2)}
+.pill.on{color:#bfe8a8;border-color:var(--accent2)}
+.pill.off{color:#ffb9b9;border-color:#a33}
+.badge{display:inline-block;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;margin:2px 3px 0 0}
+.badge.offline{background:#2e4423;color:#bfe8a8}
+.badge.spotify{background:#23331f;color:#9fd0a0;border:1px solid var(--accent2)}
+.track.dimmed{opacity:.45}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.recapgrid{display:flex;gap:8px;flex-wrap:wrap}
+.recapgrid>div{flex:1;min-width:100px}
+.toprow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.toprow:last-child{border-bottom:none}
 </style>
 </head>
 <body>
 <h1>🎵 Culture Player</h1>
 <p class="sub">Low-data music. Your own files play at <b>0 data</b>, offline. Spotify connects the official way.</p>
+<div class="row" style="margin-bottom:14px">
+  <span class="big" id="greeting">Hello</span>
+  <span class="pill on" id="netPill">● Online</span>
+</div>
+
+<div class="card" id="recentCard">
+  <h2>⏪ Jump back in</h2>
+  <div id="recentList"></div>
+  <p class="muted" id="recentEmpty">Nothing played yet — your recently played songs will show here.</p>
+</div>
 
 <div class="card" id="meterCard">
   <h2>📊 Today</h2>
@@ -64,6 +86,21 @@ footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
     <div style="flex:1"><div class="big" id="meterData">0 MB</div><div class="muted">data used by local plays</div></div>
     <div style="flex:1"><div class="big" id="meterSaved">~0 MB</div><div class="muted">saved vs streaming (~1.2 MB/min)</div></div>
   </div>
+</div>
+
+<div class="card" id="recapCard">
+  <h2>📈 Your Recap</h2>
+  <div class="recapgrid">
+    <div><div class="big" id="recapToday">0 min</div><div class="muted">minutes today</div></div>
+    <div><div class="big" id="recapWeek">0 min</div><div class="muted">minutes this week</div></div>
+    <div><div class="big" id="recapAll">0 min</div><div class="muted">minutes all time</div></div>
+    <div><div class="big" id="recapSongs">0</div><div class="muted">songs played</div></div>
+  </div>
+  <h2 style="margin-top:14px">🏆 Top songs by minutes</h2>
+  <div id="topSongs"><p class="muted">Play some songs and your top songs will show here.</p></div>
+  <h2 style="margin-top:14px">🎤 Top artists by minutes</h2>
+  <div id="topArtists"><p class="muted">Your top artists will show here.</p></div>
+  <p class="muted">Minutes are counted inside Culture Player, while it is open — for your own files, and for Spotify songs you start from here while it stays connected. Spotify's own stats and Wrapped count everything on Spotify's side separately.</p>
 </div>
 
 <div class="card" id="playerCard">
@@ -114,6 +151,12 @@ footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
   <input type="file" id="fileInput" accept="audio/*" multiple>
   <div style="height:10px"></div>
   <input type="search" id="searchBox" placeholder="Search your songs…">
+  <div class="row" id="libTabs" style="margin-top:10px">
+    <button class="small tab active" data-libtab="all">All</button>
+    <button class="small tab" data-libtab="offline">Offline</button>
+    <button class="small tab" data-libtab="spotify">Spotify</button>
+    <button class="small tab" data-libtab="liked">Liked</button>
+  </div>
   <div id="trackList" style="margin-top:8px"></div>
   <p class="muted" id="libEmpty">No songs yet. Add some above.</p>
 </div>
@@ -159,7 +202,10 @@ footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
 </div>
 
 <footer>
-  <b>Honest limits.</b> Spotify songs cannot be downloaded or made low-bitrate by this app — Spotify controls that stream, and its quality setting lives in the Spotify app itself.
+  <p>Culture Player v1.1</p>
+  <b>Honest limits.</b> Spotify songs cannot be downloaded for offline by this app — that is Spotify's rule. Offline here means your own files, which always play with data off.
+  Minutes played are counted inside Culture Player while it is open and connected, as described under Your Recap — Spotify's own stats and Wrapped still count everything on Spotify's side separately.
+  Spotify songs cannot be made low-bitrate by this app — Spotify controls that stream, and its quality setting lives in the Spotify app itself.
   Playing Spotify inside this page needs Spotify Premium (that is Spotify's own rule for its web player).
   Controlling Spotify needs an active Spotify device — open the Spotify app on your phone once so it shows up.
   Your own files in this app always play at 0 data, offline.
@@ -175,6 +221,9 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){retur
 function fmtTime(s){if(!isFinite(s)||s<0)s=0;var m=Math.floor(s/60),r=Math.floor(s%60);return m+":"+(r<10?"0":"")+r;}
 function fmtMB(n){return (Math.round(n*10)/10)+" MB";}
 function todayKey(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function dayKeyOffset(daysAgo){var d=new Date();d.setDate(d.getDate()-daysAgo);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function fmtMinutes(sec){var mins=(sec||0)/60;if(mins>=600)return (Math.round(mins/6)/10).toLocaleString("en")+" hrs";if(mins<1&&sec>0)return "<1 min";return (Math.round(mins*10)/10).toLocaleString("en")+" min";}
+function fmtAgo(ts){var s=Math.max(0,Math.floor((Date.now()-ts)/1000));if(s<60)return "just now";var m=Math.floor(s/60);if(m<60)return m+" min ago";var h=Math.floor(m/60);if(h<24)return h+(h===1?" hr ago":" hrs ago");var d=Math.floor(h/24);return d+(d===1?" day ago":" days ago");}
 function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
 /* ============ moods ============ */
@@ -212,13 +261,84 @@ function orderByEnergy(list){
 var settings={automix:true,djAutoplay:true,dataLimit:100};
 try{var s=JSON.parse(localStorage.getItem("cp_settings")||"null");if(s)settings=Object.assign(settings,s);}catch(e){}
 function saveSettings(){try{localStorage.setItem("cp_settings",JSON.stringify(settings));}catch(e){}}
-var stats={date:todayKey(),plays:0,minutes:0};
-try{var st=JSON.parse(localStorage.getItem("cp_stats")||"null");if(st&&st.date===todayKey())stats=st;}catch(e){}
-function saveStats(){stats.date=todayKey();try{localStorage.setItem("cp_stats",JSON.stringify(stats));}catch(e){}renderMeter();}
-function renderMeter(){$("meterPlays").textContent=stats.plays+" plays";$("meterData").textContent="0 MB";$("meterSaved").textContent="~"+fmtMB(stats.minutes*1.2);}
-var recentIds=[];
-try{recentIds=JSON.parse(localStorage.getItem("cp_recent")||"[]");}catch(e){}
-function markRecent(id){recentIds=recentIds.filter(function(x){return x!==id;});recentIds.push(id);if(recentIds.length>200)recentIds=recentIds.slice(-200);try{localStorage.setItem("cp_recent",JSON.stringify(recentIds));}catch(e){}}
+/* Per-day listening stats: cp_stats_days = { "YYYY-MM-DD": {seconds, plays, finishes} } — real counted seconds only (v1.1).
+   Legacy cp_stats (v1.0 estimated minutes) is NOT carried into minutes; only its play count for today is kept, once. */
+var statsDays={};
+try{statsDays=JSON.parse(localStorage.getItem("cp_stats_days")||"{}")||{};}catch(e){statsDays={};}
+if(!localStorage.getItem("cp_stats_days")){
+  try{var legacy=JSON.parse(localStorage.getItem("cp_stats")||"null");
+    if(legacy&&legacy.date===todayKey()&&legacy.plays)statsDays[todayKey()]={seconds:0,plays:legacy.plays,finishes:0};
+  }catch(e){}
+}
+function dayEntry(key){if(!statsDays[key])statsDays[key]={seconds:0,plays:0,finishes:0};return statsDays[key];}
+function saveStatsDays(){try{localStorage.setItem("cp_stats_days",JSON.stringify(statsDays));}catch(e){}}
+function addDayPlay(){dayEntry(todayKey()).plays+=1;saveStatsDays();renderMeter();renderRecap();}
+function addDayFinish(){dayEntry(todayKey()).finishes+=1;saveStatsDays();}
+var lastRecapRender=0;
+function addDaySeconds(sec){if(!(sec>0))return;dayEntry(todayKey()).seconds+=sec;saveStatsDays();renderMeter();var nowMs=Date.now();if(nowMs-lastRecapRender>5000){lastRecapRender=nowMs;renderRecap();}}
+function loadSpStats(){try{return JSON.parse(localStorage.getItem("cp_spotify_stats")||"{}")||{};}catch(e){return{};}}
+function renderMeter(){
+  var d=statsDays[todayKey()]||{seconds:0,plays:0};
+  $("meterPlays").textContent=d.plays+" plays";
+  $("meterData").textContent="0 MB";
+  $("meterSaved").textContent="~"+fmtMB((d.seconds/60)*1.2);
+}
+function renderRecap(){
+  var todaySec=(statsDays[todayKey()]||{seconds:0}).seconds;
+  var weekSec=0,allSec=0,totalPlays=0;
+  Object.keys(statsDays).forEach(function(k){allSec+=statsDays[k].seconds||0;totalPlays+=statsDays[k].plays||0;});
+  for(var i=0;i<7;i++){var e=statsDays[dayKeyOffset(i)];if(e)weekSec+=e.seconds||0;}
+  $("recapToday").textContent=fmtMinutes(todaySec);
+  $("recapWeek").textContent=fmtMinutes(weekSec);
+  $("recapAll").textContent=fmtMinutes(allSec);
+  $("recapSongs").textContent=totalPlays.toLocaleString("en");
+  var songMap={},artistMap={};
+  tracks.forEach(function(t){if(!(t.secondsListened>0))return;var k=(t.title+"|"+t.artist).toLowerCase();songMap[k]=songMap[k]||{label:t.title+" — "+t.artist,sec:0};songMap[k].sec+=t.secondsListened;artistMap[t.artist]=artistMap[t.artist]||{label:t.artist,sec:0};artistMap[t.artist].sec+=t.secondsListened;});
+  var sp=loadSpStats();Object.keys(sp).forEach(function(uri){var s=sp[uri];if(!(s.seconds>0))return;var k=((s.title||"Unknown")+"|"+(s.artist||"Unknown artist")).toLowerCase();songMap[k]=songMap[k]||{label:(s.title||"Unknown")+" — "+(s.artist||"Unknown artist"),sec:0};songMap[k].sec+=s.seconds;var an=s.artist||"Unknown artist";artistMap[an]=artistMap[an]||{label:an,sec:0};artistMap[an].sec+=s.seconds;});
+  var topS=Object.keys(songMap).map(function(k){return songMap[k];}).sort(function(a,b){return b.sec-a.sec;}).slice(0,5);
+  var topA=Object.keys(artistMap).map(function(k){return artistMap[k];}).sort(function(a,b){return b.sec-a.sec;}).slice(0,5);
+  var rows=function(list,empty){if(!list.length)return '<p class="muted">'+empty+"</p>";return list.map(function(x){return '<div class="toprow"><span>'+esc(x.label)+'</span><b>'+fmtMinutes(x.sec)+"</b></div>";}).join("");};
+  $("topSongs").innerHTML=rows(topS,"Play some songs and your top songs will show here.");
+  $("topArtists").innerHTML=rows(topA,"Your top artists will show here.");
+}
+/* Recently Played (cp_recent, cap 30): entries {kind:"local"|"spotify", key, title, artist, ts} */
+var recentPlays=[];
+try{var rp=JSON.parse(localStorage.getItem("cp_recent")||"[]");if(Array.isArray(rp))recentPlays=rp.filter(function(x){return x&&typeof x==="object"&&x.kind;});}catch(e){recentPlays=[];}
+var recentIds=recentPlays.filter(function(x){return x.kind==="local";}).map(function(x){return x.key;});
+function saveRecent(){try{localStorage.setItem("cp_recent",JSON.stringify(recentPlays));}catch(e){}}
+function pushRecent(kind,key,title,artist){
+  recentPlays=recentPlays.filter(function(x){return !(x.kind===kind&&x.key===key);});
+  recentPlays.unshift({kind:kind,key:key,title:title||"Unknown",artist:artist||"",ts:Date.now()});
+  if(recentPlays.length>30)recentPlays=recentPlays.slice(0,30);
+  recentIds=recentPlays.filter(function(x){return x.kind==="local";}).map(function(x){return x.key;});
+  saveRecent();renderRecent();
+}
+function markRecent(id){var t=typeof trackById==="function"?trackById(id):null;pushRecent("local",id,t?t.title:"Unknown",t?t.artist:"");}
+function renderRecent(){
+  var has=recentPlays.length>0;
+  $("recentEmpty").style.display=has?"none":"block";
+  var html="";
+  recentPlays.slice(0,12).forEach(function(r){
+    html+='<div class="track" data-recent-kind="'+esc(r.kind)+'" data-recent-key="'+esc(r.key)+'"><div class="grow"><div class="t">'+esc(r.title)+'</div><div class="a">'+esc(r.artist)+" · "+fmtAgo(r.ts)+'</div><div><span class="badge '+(r.kind==="spotify"?"spotify":"offline")+'">'+(r.kind==="spotify"?"SPOTIFY":"OFFLINE")+"</span></div></div></div>";
+  });
+  $("recentList").innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-recent-key]"),function(el){el.addEventListener("click",function(){
+    var kind=el.getAttribute("data-recent-kind"),key=el.getAttribute("data-recent-key");
+    if(kind==="local"){var t=trackById(key);if(t)playQueue(tracks.slice(),key);else showMsg($("djMsg"),"That song is no longer in your library.",true);}
+    else{if(!navigator.onLine){showMsg($("spMsg"),"You're offline — Spotify songs need data. Your OFFLINE songs still play.",true);return;}spPlayOnDevice(key);}
+  });});
+}
+/* Online / offline status pill */
+function isOnline(){return navigator.onLine!==false;}
+function renderNet(){
+  var on=isOnline(),pill=$("netPill");
+  pill.textContent=on?"● Online":"● Offline";pill.className="pill "+(on?"on":"off");
+  renderLibrary();
+  if(typeof renderSpTracksFromCache==="function")renderSpTracksFromCache();
+}
+window.addEventListener("online",renderNet);
+window.addEventListener("offline",renderNet);
+(function(){var h=new Date().getHours();$("greeting").textContent=h<12?"Good morning":(h<18?"Good afternoon":"Good evening");})();
 
 /* ============ IndexedDB ============ */
 var dbPromise=new Promise(function(res,rej){
@@ -232,6 +352,17 @@ function dbDel(id){return dbPromise.then(function(db){return new Promise(functio
 
 /* ============ local library + player ============ */
 var tracks=[];var queue=[];var qIndex=-1;var currentId=null;var djMode=false;var activeMood=null;var countedPlayFor=null;var listenedSec=0;var lastTick=0;
+var lastAudioPos=null;var pendingLocalSec=0;
+function flushLocalSeconds(){
+  if(pendingLocalSec>0&&currentId){var t=trackById(currentId);if(t){t.secondsListened=(t.secondsListened||0)+pendingLocalSec;dbPut(t).catch(function(){});}}
+  pendingLocalSec=0;
+}
+function accrueLocal(delta){
+  if(!(delta>0))return;
+  pendingLocalSec+=delta;listenedSec+=delta;
+  addDaySeconds(delta);
+  if(pendingLocalSec>=15)flushLocalSeconds();
+}
 var audio=$("audio");
 function trackById(id){for(var i=0;i<tracks.length;i++)if(tracks[i].id===id)return tracks[i];return null;}
 function parseName(name){
@@ -240,25 +371,52 @@ function parseName(name){
   if(parts.length>=2)return{artist:parts[0].trim(),title:parts.slice(1).join(" - ").trim()};
   return{artist:"Unknown artist",title:base.trim()};
 }
+var libTab="all";
+var spCache=[]; /* normalized Spotify tracks from the last load: {uri,title,artist,moods} */
+function spRowHtml(tr){
+  var tags=(tr.moods||[]).map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
+  var off=!isOnline();
+  return '<div class="track'+(off?" dimmed":"")+'"><div class="grow"><div class="t">'+esc(tr.title)+'</div><div class="a">'+esc(tr.artist)+'</div><div><span class="badge spotify">SPOTIFY</span>'+tags+'</div></div>'
+    +'<button class="small" data-spplay="'+esc(tr.uri)+'">▶ Play</button>'
+    +'<button class="small" data-spweb="'+esc(tr.uri)+'">Play here*</button></div>';
+}
+function bindSpButtons(scope){
+  Array.prototype.forEach.call((scope||document).querySelectorAll("[data-spplay]"),function(el){if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",function(){spPlayOnDevice(el.getAttribute("data-spplay"));});});
+  Array.prototype.forEach.call((scope||document).querySelectorAll("[data-spweb]"),function(el){if(el.dataset.bound)return;el.dataset.bound="1";el.addEventListener("click",function(){spPlayHere(el.getAttribute("data-spweb"));});});
+}
+function renderLibTabs(){
+  Array.prototype.forEach.call(document.querySelectorAll("[data-libtab]"),function(el){el.classList.toggle("active",el.getAttribute("data-libtab")===libTab);});
+}
 function renderLibrary(){
   var q=($("searchBox").value||"").toLowerCase();
-  var list=tracks.filter(function(t){
+  var matchLocal=function(t){
     if(activeMood&&(t.moods||[]).indexOf(activeMood)<0)return false;
-    if(q&&(t.title+" "+t.artist).toLowerCase().indexOf(q)<0)return false;return true;});
+    if(libTab==="liked"&&!t.liked)return false;
+    if(q&&(t.title+" "+t.artist).toLowerCase().indexOf(q)<0)return false;return true;};
+  var matchSp=function(tr){
+    if(activeMood&&(tr.moods||[]).indexOf(activeMood)<0)return false;
+    if(q&&(tr.title+" "+tr.artist).toLowerCase().indexOf(q)<0)return false;return true;};
+  var showLocal=libTab!=="spotify";
+  var showSp=(libTab==="all"||libTab==="spotify")&&spCache.length>0;
+  var list=showLocal?tracks.filter(matchLocal):[];
   $("libEmpty").style.display=tracks.length?"none":"block";
   var html="";
   list.forEach(function(t){
     var tags=(t.moods||[]).map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
     html+='<div class="track'+(t.id===currentId?" playing":"")+'" data-play="'+esc(t.id)+'">'
-      +'<div class="grow"><div class="t">'+esc(t.title)+'</div><div class="a">'+esc(t.artist)+" · "+(Math.round(t.size/1024/10.24)/100)+" MB · ▶ "+(t.plays||0)+"</div><div>"+tags+"</div></div>"
+      +'<div class="grow"><div class="t">'+esc(t.title)+'</div><div class="a">'+esc(t.artist)+" · "+(Math.round(t.size/1024/10.24)/100)+" MB · ▶ "+(t.plays||0)+" · ⏱ "+fmtMinutes(t.secondsListened||0)+'</div><div><span class="badge offline">OFFLINE</span>'+tags+"</div></div>"
       +'<button class="heart'+(t.liked?" liked":"")+'" data-like="'+esc(t.id)+'">'+(t.liked?"❤️":"🤍")+"</button>"
       +'<button class="small" data-del="'+esc(t.id)+'">Delete</button></div>';
   });
-  if(!list.length&&tracks.length)html='<p class="muted">No songs match. Clear the mood / search.</p>';
+  if(showSp){spCache.filter(matchSp).forEach(function(tr){html+=spRowHtml(tr);});}
+  if(libTab==="spotify"&&!spCache.length)html='<p class="muted">No Spotify songs loaded yet. Connect Spotify below and load your Liked Songs or a playlist — they will show here too.</p>';
+  else if(!list.length&&!showSp&&tracks.length)html='<p class="muted">No songs match. Clear the mood / search, or pick another tab.</p>';
+  else if(showSp&&!list.length&&!spCache.filter(matchSp).length&&libTab==="all")html+="";
   $("trackList").innerHTML=html;
-  Array.prototype.forEach.call(document.querySelectorAll("[data-play]"),function(el){el.addEventListener("click",function(e){if(e.target.closest("button"))return;playQueue(tracks.filter(function(t){return !activeMood||(t.moods||[]).indexOf(activeMood)>=0;}),el.getAttribute("data-play"));});});
-  Array.prototype.forEach.call(document.querySelectorAll("[data-like]"),function(el){el.addEventListener("click",function(){toggleLike(el.getAttribute("data-like"));});});
-  Array.prototype.forEach.call(document.querySelectorAll("[data-del]"),function(el){el.addEventListener("click",function(){deleteTrack(el.getAttribute("data-del"));});});
+  Array.prototype.forEach.call($("trackList").querySelectorAll("[data-play]"),function(el){el.addEventListener("click",function(e){if(e.target.closest("button"))return;playQueue(tracks.filter(function(t){return !activeMood||(t.moods||[]).indexOf(activeMood)>=0;}),el.getAttribute("data-play"));});});
+  Array.prototype.forEach.call($("trackList").querySelectorAll("[data-like]"),function(el){el.addEventListener("click",function(){toggleLike(el.getAttribute("data-like"));});});
+  Array.prototype.forEach.call($("trackList").querySelectorAll("[data-del]"),function(el){el.addEventListener("click",function(){deleteTrack(el.getAttribute("data-del"));});});
+  bindSpButtons($("trackList"));
 }
 function toggleLike(id){var t=trackById(id);if(!t)return;t.liked=!t.liked;dbPut(stripBlob(t)).catch(function(){});renderLibrary();renderLikeBtn();}
 function stripBlob(t){return t;}
@@ -267,12 +425,13 @@ function renderLikeBtn(){var t=trackById(currentId);$("likeBtn").textContent=t&&
 var curObjectUrl=null;
 function playTrack(t){
   if(!t)return;
+  flushLocalSeconds();
   if(curObjectUrl)URL.revokeObjectURL(curObjectUrl);
   curObjectUrl=URL.createObjectURL(t.blob);
-  audio.src=curObjectUrl;currentId=t.id;countedPlayFor=null;listenedSec=0;lastTick=0;
+  audio.src=curObjectUrl;currentId=t.id;countedPlayFor=null;listenedSec=0;lastTick=0;lastAudioPos=null;pendingLocalSec=0;
   $("nowTitle").textContent=t.title;$("nowArtist").textContent=t.artist;
   t.plays=(t.plays||0)+1;dbPut(t).catch(function(){});markRecent(t.id);
-  stats.plays+=1;saveStats();
+  addDayPlay();
   audio.play().catch(function(){});
   if("mediaSession" in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:t.artist,album:"Culture Player"});}catch(e){}}
   renderLibrary();renderLikeBtn();renderDjArtist();announceDj();
@@ -338,16 +497,27 @@ audio.addEventListener("play",function(){$("playBtn").textContent="⏸";});
 audio.addEventListener("pause",function(){$("playBtn").textContent="▶";});
 audio.addEventListener("timeupdate",function(){
   if(audio.duration){$("seek").value=Math.round(audio.currentTime/audio.duration*1000);$("curTime").textContent=fmtTime(audio.currentTime);$("durTime").textContent=fmtTime(audio.duration);}
-  var now=audio.currentTime;if(lastTick&&now>lastTick)listenedSec+=now-lastTick;lastTick=now;
-  if(countedPlayFor!==currentId&&audio.duration&&listenedSec>audio.duration*0.5){countedPlayFor=currentId;stats.minutes+=audio.duration/60;saveStats();}
+  /* Real minutes counting: only forward progress while playing counts.
+     A jump of more than 3s between updates is a seek (or a stall) and is ignored; paused time never advances currentTime. */
+  var now=audio.currentTime;
+  if(lastAudioPos!==null&&!audio.paused&&!audio.seeking){
+    var delta=now-lastAudioPos;
+    if(delta>0&&delta<=3)accrueLocal(delta);
+  }
+  lastAudioPos=now;lastTick=now;
 });
+audio.addEventListener("pause",function(){flushLocalSeconds();lastAudioPos=audio.currentTime;});
+audio.addEventListener("seeked",function(){lastAudioPos=audio.currentTime;});
 audio.addEventListener("ended",function(){
+  flushLocalSeconds();
   var t=trackById(currentId);if(t){t.finishes=(t.finishes||0)+1;dbPut(t).catch(function(){});}
+  addDayFinish();
   nextTrack(true);
 });
 $("seek").addEventListener("input",function(){if(audio.duration)audio.currentTime=$("seek").value/1000*audio.duration;});
 $("volume").addEventListener("input",function(){audio.volume=$("volume").value/100;});
 $("searchBox").addEventListener("input",renderLibrary);
+Array.prototype.forEach.call(document.querySelectorAll("[data-libtab]"),function(el){el.addEventListener("click",function(){libTab=el.getAttribute("data-libtab");renderLibTabs();renderLibrary();});});
 if("mediaSession" in navigator){try{navigator.mediaSession.setActionHandler("play",function(){audio.play();});navigator.mediaSession.setActionHandler("pause",function(){audio.pause();});navigator.mediaSession.setActionHandler("nexttrack",function(){nextTrack(false);});navigator.mediaSession.setActionHandler("previoustrack",prevTrack);}catch(e){}}
 function renderMoodChips(){
   var html="";ALL_MOODS.forEach(function(m){html+='<button class="chip'+(activeMood===m?" active":"")+'" data-mood="'+m+'">'+m+"</button>";});
@@ -370,8 +540,8 @@ $("setAutomix").addEventListener("change",function(){settings.automix=$("setAuto
 $("setDjAutoplay").addEventListener("change",function(){settings.djAutoplay=$("setDjAutoplay").checked;saveSettings();});
 $("setDataLimit").addEventListener("change",function(){settings.dataLimit=parseFloat($("setDataLimit").value)||0;saveSettings();});
 audio.volume=0.9;
-renderMoodChips();renderMeter();
-dbAll().then(function(list){tracks=list.sort(function(a,b){return (a.addedAt||0)-(b.addedAt||0);});tracks.forEach(function(t){if(!t.moods)t.moods=guessMoods(t.title,t.artist,t.name);});renderLibrary();}).catch(function(){renderLibrary();});
+renderMoodChips();renderMeter();renderRecap();renderRecent();renderLibTabs();renderNet();
+dbAll().then(function(list){tracks=list.sort(function(a,b){return (a.addedAt||0)-(b.addedAt||0);});tracks.forEach(function(t){if(!t.moods)t.moods=guessMoods(t.title,t.artist,t.name);if(t.secondsListened===undefined)t.secondsListened=0;});renderLibrary();renderRecap();renderRecent();}).catch(function(){renderLibrary();});
 </script>
 
 
@@ -400,6 +570,7 @@ $("spConnect").addEventListener("click",async function(){
   window.location.href=url;
 });
 $("spDisconnect").addEventListener("click",function(){
+  spStopPolling();spCache=[];spLastHeading="";
   localStorage.removeItem("cp_spotify_tokens");localStorage.removeItem("cp_spotify_verifier");
   $("spContent").classList.add("hidden");$("spUser").textContent="";$("spTracks").innerHTML="";$("spPlaylists").innerHTML="";
   showMsg($("spMsg"),"Disconnected. Your Client ID is kept above so reconnecting is quick.");
@@ -450,23 +621,29 @@ $("spLoadPlaylists").addEventListener("click",async function(){
       catch(e){showMsg($("spMsg"),String(e.message||e),true);}});});
   }catch(e){showMsg($("spMsg"),String(e.message||e),true);}
 });
+var spLastHeading="";
 function renderSpTracks(list,heading){
-  var html="<b>"+esc(heading)+"</b>";
-  list.forEach(function(tr){
+  spLastHeading=heading;
+  spCache=list.map(function(tr){
     var artists=(tr.artists||[]).map(function(a){return a.name;}).join(", ");
-    var moods=guessMoods(tr.name,artists,"");
-    var tags=moods.map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
-    html+='<div class="track"><div class="grow"><div class="t">'+esc(tr.name)+'</div><div class="a">'+esc(artists)+"</div><div>"+tags+'</div></div>'
-      +'<button class="small" data-spplay="'+esc(tr.uri)+'">▶ Play</button>'
-      +'<button class="small" data-spweb="'+esc(tr.uri)+'">Play here*</button></div>';
+    return {uri:tr.uri,title:tr.name,artist:artists,moods:guessMoods(tr.name,artists,"")};
   });
-  if(!list.length)html+='<p class="muted">Nothing here yet.</p>';
+  renderSpTracksFromCache();
+  renderLibrary();
+}
+function renderSpTracksFromCache(){
+  if(!spLastHeading&&!spCache.length)return;
+  var html="<b>"+esc(spLastHeading||"Spotify songs")+"</b>";
+  spCache.forEach(function(tr){html+=spRowHtml(tr);});
+  if(!spCache.length)html+='<p class="muted">Nothing here yet.</p>';
   html+='<p class="muted">* Play here needs Spotify Premium. ▶ Play sends it to an active Spotify device.</p>';
   $("spTracks").innerHTML=html;
-  Array.prototype.forEach.call(document.querySelectorAll("[data-spplay]"),function(el){el.addEventListener("click",function(){spPlayOnDevice(el.getAttribute("data-spplay"));});});
-  Array.prototype.forEach.call(document.querySelectorAll("[data-spweb]"),function(el){el.addEventListener("click",function(){spPlayHere(el.getAttribute("data-spweb"));});});
+  bindSpButtons($("spTracks"));
 }
+function spTrackMeta(uri){for(var i=0;i<spCache.length;i++)if(spCache[i].uri===uri)return spCache[i];return null;}
+function spOfflineBlock(){showMsg($("spMsg"),"You're offline — Spotify songs need data. Your OFFLINE songs still play.",true);return true;}
 async function spPlayOnDevice(uri){
+  if(!navigator.onLine){spOfflineBlock();return;}
   try{
     var devs=await spFetch("/v1/me/player/devices");
     var active=(devs.devices||[]).filter(function(d){return d.is_active;})[0]||(devs.devices||[])[0];
@@ -475,10 +652,65 @@ async function spPlayOnDevice(uri){
     var r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+encodeURIComponent(active.id),{method:"PUT",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({uris:[uri]})});
     if(!r.ok&&r.status!==204)throw new Error("Play failed: "+r.status+" "+(await r.text()).slice(0,200));
     showMsg($("spMsg"),"Playing on: "+(active.name||"your Spotify device")+" ("+(active.type||"device")+")");
+    var meta=spTrackMeta(uri);if(meta)pushRecent("spotify",uri,meta.title,meta.artist);
+    spStartPolling();
   }catch(e){showMsg($("spMsg"),String(e.message||e),true);}
+}
+/* ============ Spotify minutes counting (polls /v1/me/player every ~15s while this page is open) ============ */
+var spPollTimer=null,spPollUri=null,spPollLastProgress=null,spPollEmpty=0,spPollBusy=false;
+function spSaveStats(map){try{localStorage.setItem("cp_spotify_stats",JSON.stringify(map));}catch(e){}}
+function spStartPolling(){
+  if(spPollTimer)return;
+  spPollTimer=setInterval(spPollTick,15000);
+  setTimeout(spPollTick,2500);
+}
+function spStopPolling(){
+  if(spPollTimer){clearInterval(spPollTimer);spPollTimer=null;}
+  spPollUri=null;spPollLastProgress=null;spPollEmpty=0;
+}
+async function spPollTick(){
+  if(spPollBusy)return;spPollBusy=true;
+  try{
+    var data=await spFetch("/v1/me/player");
+    if(!data||!data.item){
+      spPollEmpty++;
+      if(spPollEmpty>=4)spStopPolling();
+      spPollBusy=false;return;
+    }
+    spPollEmpty=0;
+    var item=data.item,uri=item.uri;
+    var title=item.name||"Unknown";
+    var artist=(item.artists||[]).map(function(a){return a.name;}).join(", ")||"Unknown artist";
+    var map=loadSpStats();
+    if(uri!==spPollUri){
+      spPollUri=uri;spPollLastProgress=(typeof data.progress_ms==="number")?data.progress_ms:null;
+      if(!map[uri])map[uri]={title:title,artist:artist,seconds:0,plays:0};
+      map[uri].title=title;map[uri].artist=artist;map[uri].plays=(map[uri].plays||0)+1;
+      spSaveStats(map);
+      addDayPlay();
+      pushRecent("spotify",uri,title,artist);
+      spPollBusy=false;return;
+    }
+    if(data.is_playing&&spPollLastProgress!==null&&typeof data.progress_ms==="number"){
+      var deltaMs=data.progress_ms-spPollLastProgress;
+      /* Anti-seek rule for a 15s poll: only plausible forward progress counts (0 to ~25s). Seeks, restarts and jumps are ignored. */
+      if(deltaMs>0&&deltaMs<=25000){
+        var sec=deltaMs/1000;
+        if(!map[uri])map[uri]={title:title,artist:artist,seconds:0,plays:0};
+        map[uri].seconds=(map[uri].seconds||0)+sec;
+        spSaveStats(map);
+        addDaySeconds(sec);
+      }
+    }
+    if(typeof data.progress_ms==="number")spPollLastProgress=data.progress_ms;
+  }catch(e){
+    /* Counting is best-effort: a failed poll never breaks playback. */
+  }
+  spPollBusy=false;
 }
 var spPlayer=null,spDeviceId=null;
 function spPlayHere(uri){
+  if(!navigator.onLine){spOfflineBlock();return;}
   showMsg($("spMsg"),"Loading Spotify web player… (needs Premium)");
   var start=function(){
     window.onSpotifyWebPlaybackSDKReady=async function(){
@@ -491,6 +723,8 @@ function spPlayHere(uri){
             var tok2=await spAccessToken();var r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+encodeURIComponent(spDeviceId),{method:"PUT",headers:{"Authorization":"Bearer "+tok2,"Content-Type":"application/json"},body:JSON.stringify({uris:[uri]})});
             if(!r.ok&&r.status!==204)throw new Error("Play here failed: "+r.status);
             showMsg($("spMsg"),"Playing here in Culture Player.");
+            var meta=spTrackMeta(uri);if(meta)pushRecent("spotify",uri,meta.title,meta.artist);
+            spStartPolling();
           }catch(e){showMsg($("spMsg"),String(e.message||e)+" — in-browser playback needs Spotify Premium.",true);}
         });
         spPlayer.addListener("account_error",function(ev){showMsg($("spMsg"),"Spotify account error: "+ev.message+" — in-browser playback needs Premium.",true);});
