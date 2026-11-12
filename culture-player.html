@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Culture Player — low-data music</title>
+<style>
+:root{--bg:#12100e;--card:#1e1b18;--card2:#28231f;--accent:#e07840;--accent2:#7a9a5c;--text:#f2ece6;--muted:#a89f94;--line:#3a342e;--radius:16px}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);padding:14px;max-width:720px;margin:0 auto}
+h1{font-size:26px;margin:6px 0 2px}
+h2{font-size:18px;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 14px;font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:var(--card2);color:var(--text);border:1px solid var(--line);border-radius:999px;padding:12px 16px;font-size:15px;cursor:pointer;min-height:48px}
+button:active{transform:scale(.97)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+button.green{background:var(--accent2);border-color:var(--accent2);color:#fff}
+button.small{padding:8px 12px;min-height:40px;font-size:14px}
+button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+input[type=text],input[type=number],input[type=search]{width:100%;background:#171412;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+label{font-size:14px;color:var(--muted)}
+.big{font-size:20px;font-weight:700}
+.muted{color:var(--muted);font-size:13px}
+.chip{padding:8px 13px;min-height:40px;font-size:14px}
+.track{display:flex;gap:10px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:10px}
+.track:last-child{border-bottom:none}
+.track.playing{background:var(--card2)}
+.track .grow{flex:1;min-width:0}
+.track .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track .a{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-block;background:#33302a;color:#e8ddc9;border-radius:999px;padding:2px 8px;font-size:11px;margin:2px 3px 0 0;text-transform:capitalize}
+.heart{font-size:20px;background:none;border:none;min-height:40px;padding:6px}
+.heart.liked{color:#e05070}
+.banner{background:#2e2419;border:1px solid var(--accent);border-radius:12px;padding:12px;margin-bottom:10px;display:none}
+.banner.show{display:block}
+.msg{background:#241f1a;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px;font-size:14px;display:none;white-space:pre-wrap;word-break:break-word}
+.msg.show{display:block}
+.msg.err{border-color:#a33;color:#ffb9b9}
+textarea.uri{width:100%;background:#171412;color:#9fd0ff;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px;resize:none}
+ol.steps{margin:8px 0;padding-left:20px;font-size:14px;color:var(--muted)}
+ol.steps li{margin:4px 0}
+.switch{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.switch:last-child{border-bottom:none}
+.switch input[type=checkbox]{width:26px;height:26px;accent-color:var(--accent)}
+.controls{display:flex;justify-content:center;gap:10px;margin:10px 0}
+.controls button{width:60px;height:60px;border-radius:50%;font-size:22px;padding:0}
+.controls button.play{width:72px;height:72px;font-size:28px;background:var(--accent);border-color:var(--accent);color:#fff}
+.times{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;line-height:1.55;padding:6px 4px 30px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<h1>🎵 Culture Player</h1>
+<p class="sub">Low-data music. Your own files play at <b>0 data</b>, offline. Spotify connects the official way.</p>
+
+<div class="card" id="meterCard">
+  <h2>📊 Today</h2>
+  <div class="row">
+    <div style="flex:1"><div class="big" id="meterPlays">0 plays</div><div class="muted">local songs played today</div></div>
+    <div style="flex:1"><div class="big" id="meterData">0 MB</div><div class="muted">data used by local plays</div></div>
+    <div style="flex:1"><div class="big" id="meterSaved">~0 MB</div><div class="muted">saved vs streaming (~1.2 MB/min)</div></div>
+  </div>
+</div>
+
+<div class="card" id="playerCard">
+  <div class="muted">Now playing</div>
+  <div class="big" id="nowTitle">Nothing yet — add a song below</div>
+  <div class="muted" id="nowArtist"></div>
+  <div class="banner" id="djBanner"></div>
+  <audio id="audio" preload="metadata"></audio>
+  <input type="range" id="seek" min="0" max="1000" value="0">
+  <div class="times"><span id="curTime">0:00</span><span id="durTime">0:00</span></div>
+  <div class="controls">
+    <button id="prevBtn" title="Previous">⏮</button>
+    <button id="playBtn" class="play" title="Play / pause">▶</button>
+    <button id="nextBtn" title="Next">⏭</button>
+  </div>
+  <div class="row">
+    <button id="shuffleBtn" class="small">🔀 Smart Shuffle</button>
+    <button id="likeBtn" class="small">🤍 Like</button>
+    <span class="muted">Volume</span>
+  </div>
+  <input type="range" id="volume" min="0" max="100" value="90">
+  <div id="djArtistWrap" class="row" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
+  <h2>🎧 Auto DJ</h2>
+  <p class="muted">A set from your library, favourites (songs you finish most) first, calm → high energy. Text announcements only.</p>
+  <div class="row">
+    <button id="djStart" class="primary">▶ Start Auto DJ</button>
+    <button id="djStop">⏹ Stop Auto DJ</button>
+  </div>
+  <div class="msg" id="djMsg"></div>
+</div>
+
+<div class="card">
+  <h2>🎭 Moods</h2>
+  <div class="row" id="moodChips"></div>
+  <div class="row" style="margin-top:10px">
+    <button id="moodMixBtn" class="green">▶ Mood Mix</button>
+    <button id="moodDjBtn">🎧 DJ this mood</button>
+    <button id="clearMoodBtn" class="small">Show all</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>📁 Your music (0 data, offline)</h2>
+  <p class="muted">Add MP3 / M4A files from your phone. They are saved inside this app on your phone, so they still play with data off, even after you close it. Name files like <i>Artist - Title.mp3</i> for best results.</p>
+  <input type="file" id="fileInput" accept="audio/*" multiple>
+  <div style="height:10px"></div>
+  <input type="search" id="searchBox" placeholder="Search your songs…">
+  <div id="trackList" style="margin-top:8px"></div>
+  <p class="muted" id="libEmpty">No songs yet. Add some above.</p>
+</div>
+
+<div class="card">
+  <h2>🟢 Spotify (official connect)</h2>
+  <p class="muted">Connects with Spotify's official Web API. No password ever touches this app — Spotify's own login page handles that.</p>
+  <label>Your Spotify Client ID</label>
+  <input type="text" id="spClientId" placeholder="Paste Client ID here">
+  <div style="height:8px"></div>
+  <label>Redirect URI — add this EXACT address in your Spotify app settings:</label>
+  <textarea class="uri" id="spRedirect" rows="2" readonly></textarea>
+  <ol class="steps">
+    <li>Open developer.spotify.com/dashboard and tap <b>Create app</b> (any name).</li>
+    <li>In the app settings, add the Redirect URI shown above, exactly as shown, and save.</li>
+    <li>Copy the app's <b>Client ID</b> and paste it above.</li>
+    <li>Tap <b>Connect Spotify</b> below and log in on Spotify's page.</li>
+  </ol>
+  <div class="row">
+    <button id="spConnect" class="primary">Connect Spotify</button>
+    <button id="spDisconnect">Disconnect</button>
+  </div>
+  <div class="msg" id="spMsg"></div>
+  <div id="spContent" class="hidden">
+    <p class="big" id="spUser"></p>
+    <div class="row">
+      <button id="spLoadLiked" class="small green">Load my Liked Songs</button>
+      <button id="spLoadPlaylists" class="small">Load my playlists</button>
+    </div>
+    <div id="spPlaylists" style="margin-top:8px"></div>
+    <div id="spTracks" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>⚙️ Settings</h2>
+  <div class="switch"><span>AutoMix — order sets calm → high energy</span><input type="checkbox" id="setAutomix"></div>
+  <div class="switch"><span>Auto DJ: keep playing — new set when one ends</span><input type="checkbox" id="setDjAutoplay"></div>
+  <div style="margin-top:12px">
+    <label>Daily data warning limit (MB) — for a future streaming feature, not used by local files</label>
+    <input type="number" id="setDataLimit" min="0" step="10">
+  </div>
+</div>
+
+<footer>
+  <b>Honest limits.</b> Spotify songs cannot be downloaded or made low-bitrate by this app — Spotify controls that stream, and its quality setting lives in the Spotify app itself.
+  Playing Spotify inside this page needs Spotify Premium (that is Spotify's own rule for its web player).
+  Controlling Spotify needs an active Spotify device — open the Spotify app on your phone once so it shows up.
+  Your own files in this app always play at 0 data, offline.
+  Moods are guesses from song names and artists, so a song can land in the wrong mood.
+  Auto DJ talks in text notes only, there is no DJ voice.
+</footer>
+
+<script>
+"use strict";
+/* ============ helpers ============ */
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function fmtTime(s){if(!isFinite(s)||s<0)s=0;var m=Math.floor(s/60),r=Math.floor(s%60);return m+":"+(r<10?"0":"")+r;}
+function fmtMB(n){return (Math.round(n*10)/10)+" MB";}
+function todayKey(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function shuffleArr(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+/* ============ moods ============ */
+var MOOD_KEYWORDS={
+  rap:["rap","hip hop","hiphop","kendrick","eminem","drake","pop smoke","stormzy","trap","drill","jay-z","jay z","nas ","2pac","tupac","nicki","cardi","kanye","ye ","lil ","young thug","future ","21 savage","j. cole","j cole"],
+  chill:["chill","lofi","lo-fi","lo fi","relax","mellow","acoustic","smooth","laid back","vibe"],
+  nostalgia:["oldies","classic","retro","throwback","golden oldies","motown","soul train","back in the day"],
+  party:["party","club","dance","afrobeats","amapiano","banger","turn up","dj ","remix","edm","house music"],
+  workout:["workout","gym","run ","running","training","beast mode","power","cardio","pump"],
+  focus:["focus","study","concentration","instrumental","piano","ambient","classical","score","soundtrack","meditation music"],
+  sleep:["sleep","lullaby","night","dream","calm piano","rain sounds","soft"],
+  happy:["happy","joy","sunshine","good vibes","feel good","celebration","uplift","cheerful"],
+  sad:["sad","heartbreak","broken","tears","lonely","pain","hurt","goodbye","miss you","adele","sam smith"],
+  love:["love","romance","romantic","baby","darling","heart","forever","wedding","valentine"]
+};
+var ENERGY_BAND={sleep:0,chill:0,focus:0,love:1,happy:1,nostalgia:1,sad:1,party:2,rap:2,workout:2};
+var ALL_MOODS=Object.keys(MOOD_KEYWORDS);
+function guessMoods(title,artist,extra){
+  var hay=(" "+(artist||"")+" "+(title||"")+" "+(extra||"")+" ").toLowerCase();
+  var out=[];
+  ALL_MOODS.forEach(function(m){MOOD_KEYWORDS[m].forEach(function(k){if(hay.indexOf(k)>=0&&out.indexOf(m)<0)out.push(m);});});
+  var ym=hay.match(/\b(19[0-9][0-9]|200[0-9])\b/);
+  if(ym){var y=parseInt(ym[1],10);if(y<2000&&out.indexOf("nostalgia")<0)out.push("nostalgia");}
+  return out;
+}
+function energyOf(moods){if(!moods||!moods.length)return 1;var b=1;moods.forEach(function(m){if(ENERGY_BAND[m]!==undefined)b=Math.min(b===1&&ENERGY_BAND[m]===1?1:b,ENERGY_BAND[m]);});var best=2;moods.forEach(function(m){if(ENERGY_BAND[m]!==undefined)best=Math.min(best,ENERGY_BAND[m]);});return moods.length?best:1;}
+function orderByEnergy(list){
+  if(!settings.automix)return shuffleArr(list.slice());
+  var bands=[[],[],[]];
+  list.forEach(function(t){bands[energyOf(t.moods||guessMoods(t.title,t.artist,t.name))].push(t);});
+  var out=[];bands.forEach(function(b){out=out.concat(shuffleArr(b));});return out;
+}
+
+/* ============ settings / stats / recent ============ */
+var settings={automix:true,djAutoplay:true,dataLimit:100};
+try{var s=JSON.parse(localStorage.getItem("cp_settings")||"null");if(s)settings=Object.assign(settings,s);}catch(e){}
+function saveSettings(){try{localStorage.setItem("cp_settings",JSON.stringify(settings));}catch(e){}}
+var stats={date:todayKey(),plays:0,minutes:0};
+try{var st=JSON.parse(localStorage.getItem("cp_stats")||"null");if(st&&st.date===todayKey())stats=st;}catch(e){}
+function saveStats(){stats.date=todayKey();try{localStorage.setItem("cp_stats",JSON.stringify(stats));}catch(e){}renderMeter();}
+function renderMeter(){$("meterPlays").textContent=stats.plays+" plays";$("meterData").textContent="0 MB";$("meterSaved").textContent="~"+fmtMB(stats.minutes*1.2);}
+var recentIds=[];
+try{recentIds=JSON.parse(localStorage.getItem("cp_recent")||"[]");}catch(e){}
+function markRecent(id){recentIds=recentIds.filter(function(x){return x!==id;});recentIds.push(id);if(recentIds.length>200)recentIds=recentIds.slice(-200);try{localStorage.setItem("cp_recent",JSON.stringify(recentIds));}catch(e){}}
+
+/* ============ IndexedDB ============ */
+var dbPromise=new Promise(function(res,rej){
+  var req=indexedDB.open("culture-player",1);
+  req.onupgradeneeded=function(){req.result.createObjectStore("tracks",{keyPath:"id"});};
+  req.onsuccess=function(){res(req.result);};req.onerror=function(){rej(req.error);};
+});
+function dbAll(){return dbPromise.then(function(db){return new Promise(function(res,rej){var out=[];var tx=db.transaction("tracks","readonly");var cur=tx.objectStore("tracks").openCursor();cur.onsuccess=function(){var c=cur.result;if(c){out.push(c.value);c.continue();}else res(out);};cur.onerror=function(){rej(cur.error);};});});}
+function dbPut(t){return dbPromise.then(function(db){return new Promise(function(res,rej){var tx=db.transaction("tracks","readwrite");tx.objectStore("tracks").put(t);tx.oncomplete=res;tx.onerror=function(){rej(tx.error);};});});}
+function dbDel(id){return dbPromise.then(function(db){return new Promise(function(res,rej){var tx=db.transaction("tracks","readwrite");tx.objectStore("tracks").delete(id);tx.oncomplete=res;tx.onerror=function(){rej(tx.error);};});});}
+
+/* ============ local library + player ============ */
+var tracks=[];var queue=[];var qIndex=-1;var currentId=null;var djMode=false;var activeMood=null;var countedPlayFor=null;var listenedSec=0;var lastTick=0;
+var audio=$("audio");
+function trackById(id){for(var i=0;i<tracks.length;i++)if(tracks[i].id===id)return tracks[i];return null;}
+function parseName(name){
+  var base=name.replace(/\.[^.]+$/,"");
+  var parts=base.split(" - ");
+  if(parts.length>=2)return{artist:parts[0].trim(),title:parts.slice(1).join(" - ").trim()};
+  return{artist:"Unknown artist",title:base.trim()};
+}
+function renderLibrary(){
+  var q=($("searchBox").value||"").toLowerCase();
+  var list=tracks.filter(function(t){
+    if(activeMood&&(t.moods||[]).indexOf(activeMood)<0)return false;
+    if(q&&(t.title+" "+t.artist).toLowerCase().indexOf(q)<0)return false;return true;});
+  $("libEmpty").style.display=tracks.length?"none":"block";
+  var html="";
+  list.forEach(function(t){
+    var tags=(t.moods||[]).map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
+    html+='<div class="track'+(t.id===currentId?" playing":"")+'" data-play="'+esc(t.id)+'">'
+      +'<div class="grow"><div class="t">'+esc(t.title)+'</div><div class="a">'+esc(t.artist)+" · "+(Math.round(t.size/1024/10.24)/100)+" MB · ▶ "+(t.plays||0)+"</div><div>"+tags+"</div></div>"
+      +'<button class="heart'+(t.liked?" liked":"")+'" data-like="'+esc(t.id)+'">'+(t.liked?"❤️":"🤍")+"</button>"
+      +'<button class="small" data-del="'+esc(t.id)+'">Delete</button></div>';
+  });
+  if(!list.length&&tracks.length)html='<p class="muted">No songs match. Clear the mood / search.</p>';
+  $("trackList").innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-play]"),function(el){el.addEventListener("click",function(e){if(e.target.closest("button"))return;playQueue(tracks.filter(function(t){return !activeMood||(t.moods||[]).indexOf(activeMood)>=0;}),el.getAttribute("data-play"));});});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-like]"),function(el){el.addEventListener("click",function(){toggleLike(el.getAttribute("data-like"));});});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-del]"),function(el){el.addEventListener("click",function(){deleteTrack(el.getAttribute("data-del"));});});
+}
+function toggleLike(id){var t=trackById(id);if(!t)return;t.liked=!t.liked;dbPut(stripBlob(t)).catch(function(){});renderLibrary();renderLikeBtn();}
+function stripBlob(t){return t;}
+function deleteTrack(id){dbDel(id).then(function(){tracks=tracks.filter(function(t){return t.id!==id;});if(currentId===id){audio.pause();currentId=null;}renderLibrary();});}
+function renderLikeBtn(){var t=trackById(currentId);$("likeBtn").textContent=t&&t.liked?"❤️ Liked":"🤍 Like";}
+var curObjectUrl=null;
+function playTrack(t){
+  if(!t)return;
+  if(curObjectUrl)URL.revokeObjectURL(curObjectUrl);
+  curObjectUrl=URL.createObjectURL(t.blob);
+  audio.src=curObjectUrl;currentId=t.id;countedPlayFor=null;listenedSec=0;lastTick=0;
+  $("nowTitle").textContent=t.title;$("nowArtist").textContent=t.artist;
+  t.plays=(t.plays||0)+1;dbPut(t).catch(function(){});markRecent(t.id);
+  stats.plays+=1;saveStats();
+  audio.play().catch(function(){});
+  if("mediaSession" in navigator){try{navigator.mediaSession.metadata=new MediaMetadata({title:t.title,artist:t.artist,album:"Culture Player"});}catch(e){}}
+  renderLibrary();renderLikeBtn();renderDjArtist();announceDj();
+}
+function playQueue(list,startId){
+  queue=list.slice();if(!queue.length)return;
+  qIndex=0;if(startId){for(var i=0;i<queue.length;i++)if(queue[i].id===startId){qIndex=i;break;}}
+  playTrack(queue[qIndex]);
+}
+function smartShuffleQueue(list){
+  var fresh=list.filter(function(t){return recentIds.indexOf(t.id)<0;});
+  var pool=fresh.length>=Math.min(3,list.length)?fresh:list.slice();
+  return orderByEnergy(pool);
+}
+function nextTrack(auto){
+  if(qIndex<queue.length-1){qIndex++;playTrack(queue[qIndex]);return;}
+  if(djMode&&settings.djAutoplay){startAutoDj(true);return;}
+  if(djMode){djMode=false;showMsg($("djMsg"),"Auto DJ set finished.");hideBanner();}
+}
+function prevTrack(){if(audio.currentTime>3){audio.currentTime=0;return;}if(qIndex>0){qIndex--;playTrack(queue[qIndex]);}}
+function announceDj(){
+  if(!djMode)return;var cur=queue[qIndex];var nxt=queue[qIndex+1];
+  if(cur){var txt="Auto DJ: now "+cur.title+" — "+cur.artist+(nxt?(" — up next: "+nxt.title):" — last in this set");
+    $("djBanner").textContent=txt;$("djBanner").classList.add("show");}
+}
+function hideBanner(){$("djBanner").classList.remove("show");}
+function renderDjArtist(){
+  var t=trackById(currentId);var w=$("djArtistWrap");w.innerHTML="";
+  if(!t)return;var b=document.createElement("button");b.className="small";b.textContent="🎧 DJ "+t.artist;
+  b.addEventListener("click",function(){djArtist(t.artist);});w.appendChild(b);
+}
+function startAutoDj(isContinuation){
+  var pool=tracks.slice();if(!pool.length){showMsg($("djMsg"),"Add some songs first — Auto DJ needs your library.");return;}
+  pool.sort(function(a,b){return (b.finishes||0)-(a.finishes||0);});
+  var favFirst=orderByEnergy(pool);
+  queue=favFirst;qIndex=0;djMode=true;showMsg($("djMsg"),isContinuation?"Auto DJ: fresh set started.":"Auto DJ started — your most-finished songs first.");
+  playTrack(queue[0]);
+}
+function djMood(mood){
+  if(!mood){showMsg($("djMsg"),"Pick a mood chip first, then DJ it.");return;}
+  var pool=tracks.filter(function(t){return (t.moods||[]).indexOf(mood)>=0;});
+  if(!pool.length){showMsg($("djMsg"),"No songs guessed as "+mood+" yet.");return;}
+  queue=orderByEnergy(pool);qIndex=0;djMode=true;showMsg($("djMsg"),"Auto DJ: "+mood+" set.");playTrack(queue[0]);
+}
+function djArtist(artist){
+  var pool=tracks.filter(function(t){return t.artist===artist;});
+  if(!pool.length)return;queue=orderByEnergy(pool);qIndex=0;djMode=true;showMsg($("djMsg"),"Auto DJ: "+artist+" set.");playTrack(queue[0]);
+}
+function showMsg(el,text,isErr){el.textContent=text;el.className="msg show"+(isErr?" err":"");}
+
+/* player events */
+$("playBtn").addEventListener("click",function(){if(!currentId&&tracks.length){playQueue(smartShuffleQueue(tracks));return;}if(audio.paused)audio.play();else audio.pause();});
+$("nextBtn").addEventListener("click",function(){nextTrack(false);});
+$("prevBtn").addEventListener("click",prevTrack);
+$("shuffleBtn").addEventListener("click",function(){if(!tracks.length)return;djMode=false;hideBanner();playQueue(smartShuffleQueue(tracks));});
+$("likeBtn").addEventListener("click",function(){if(currentId)toggleLike(currentId);});
+$("djStart").addEventListener("click",function(){startAutoDj(false);});
+$("djStop").addEventListener("click",function(){djMode=false;hideBanner();showMsg($("djMsg"),"Auto DJ stopped.");});
+$("moodMixBtn").addEventListener("click",function(){var pool=activeMood?tracks.filter(function(t){return (t.moods||[]).indexOf(activeMood)>=0;}):tracks;if(!pool.length)return;djMode=false;playQueue(shuffleArr(pool.slice()));});
+$("moodDjBtn").addEventListener("click",function(){djMood(activeMood);});
+$("clearMoodBtn").addEventListener("click",function(){activeMood=null;renderMoodChips();renderLibrary();});
+audio.addEventListener("play",function(){$("playBtn").textContent="⏸";});
+audio.addEventListener("pause",function(){$("playBtn").textContent="▶";});
+audio.addEventListener("timeupdate",function(){
+  if(audio.duration){$("seek").value=Math.round(audio.currentTime/audio.duration*1000);$("curTime").textContent=fmtTime(audio.currentTime);$("durTime").textContent=fmtTime(audio.duration);}
+  var now=audio.currentTime;if(lastTick&&now>lastTick)listenedSec+=now-lastTick;lastTick=now;
+  if(countedPlayFor!==currentId&&audio.duration&&listenedSec>audio.duration*0.5){countedPlayFor=currentId;stats.minutes+=audio.duration/60;saveStats();}
+});
+audio.addEventListener("ended",function(){
+  var t=trackById(currentId);if(t){t.finishes=(t.finishes||0)+1;dbPut(t).catch(function(){});}
+  nextTrack(true);
+});
+$("seek").addEventListener("input",function(){if(audio.duration)audio.currentTime=$("seek").value/1000*audio.duration;});
+$("volume").addEventListener("input",function(){audio.volume=$("volume").value/100;});
+$("searchBox").addEventListener("input",renderLibrary);
+if("mediaSession" in navigator){try{navigator.mediaSession.setActionHandler("play",function(){audio.play();});navigator.mediaSession.setActionHandler("pause",function(){audio.pause();});navigator.mediaSession.setActionHandler("nexttrack",function(){nextTrack(false);});navigator.mediaSession.setActionHandler("previoustrack",prevTrack);}catch(e){}}
+function renderMoodChips(){
+  var html="";ALL_MOODS.forEach(function(m){html+='<button class="chip'+(activeMood===m?" active":"")+'" data-mood="'+m+'">'+m+"</button>";});
+  $("moodChips").innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-mood]"),function(el){el.addEventListener("click",function(){activeMood=activeMood===el.getAttribute("data-mood")?null:el.getAttribute("data-mood");renderMoodChips();renderLibrary();});});
+}
+$("fileInput").addEventListener("change",function(){
+  var files=Array.prototype.slice.call($("fileInput").files||[]);if(!files.length)return;
+  var done=0;
+  files.forEach(function(f){
+    var p=parseName(f.name);var id="t"+Date.now()+"_"+Math.random().toString(36).slice(2,9);
+    var t={id:id,title:p.title,artist:p.artist,name:f.name,size:f.size,blob:f,addedAt:Date.now(),plays:0,finishes:0,liked:false,moods:guessMoods(p.title,p.artist,f.name)};
+    dbPut(t).then(function(){tracks.push(t);done++;if(done===files.length){tracks.sort(function(a,b){return a.addedAt-b.addedAt;});renderLibrary();showMsg($("djMsg"),"Added "+done+" song(s). They play at 0 data, offline.");}}).catch(function(){done++;});
+  });
+  $("fileInput").value="";
+});
+/* settings UI */
+$("setAutomix").checked=settings.automix;$("setDjAutoplay").checked=settings.djAutoplay;$("setDataLimit").value=settings.dataLimit;
+$("setAutomix").addEventListener("change",function(){settings.automix=$("setAutomix").checked;saveSettings();});
+$("setDjAutoplay").addEventListener("change",function(){settings.djAutoplay=$("setDjAutoplay").checked;saveSettings();});
+$("setDataLimit").addEventListener("change",function(){settings.dataLimit=parseFloat($("setDataLimit").value)||0;saveSettings();});
+audio.volume=0.9;
+renderMoodChips();renderMeter();
+dbAll().then(function(list){tracks=list.sort(function(a,b){return (a.addedAt||0)-(b.addedAt||0);});tracks.forEach(function(t){if(!t.moods)t.moods=guessMoods(t.title,t.artist,t.name);});renderLibrary();}).catch(function(){renderLibrary();});
+</script>
+
+
+<script>
+"use strict";
+/* ============ Spotify — official Web API, Authorization Code + PKCE ============ */
+function spRedirectUri(){return window.location.href.split("?")[0].split("#")[0];}
+$("spRedirect").value=spRedirectUri();
+$("spClientId").value=localStorage.getItem("cp_spotify_client_id")||"";
+$("spClientId").addEventListener("change",function(){localStorage.setItem("cp_spotify_client_id",$("spClientId").value.trim());});
+function spTokens(){try{return JSON.parse(localStorage.getItem("cp_spotify_tokens")||"null");}catch(e){return null;}}
+function spSaveTokens(t){localStorage.setItem("cp_spotify_tokens",JSON.stringify(t));}
+function b64url(bytes){var s="";bytes.forEach(function(b){s+=String.fromCharCode(b);});return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function randomStr(len){var arr=new Uint8Array(len);crypto.getRandomValues(arr);var chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";var out="";arr.forEach(function(b){out+=chars[b%chars.length];});return out;}
+async function sha256b64url(str){var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));return b64url(new Uint8Array(buf));}
+$("spConnect").addEventListener("click",async function(){
+  var cid=$("spClientId").value.trim();
+  if(!cid){showMsg($("spMsg"),"Paste your Client ID first (step 3 above).",true);return;}
+  localStorage.setItem("cp_spotify_client_id",cid);
+  var verifier=randomStr(64);localStorage.setItem("cp_spotify_verifier",verifier);
+  var challenge=await sha256b64url(verifier);var state=randomStr(16);localStorage.setItem("cp_spotify_state",state);
+  var scopes="user-read-private user-read-email user-library-read playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state user-read-currently-playing streaming";
+  var url="https://accounts.spotify.com/authorize?response_type=code&client_id="+encodeURIComponent(cid)
+    +"&scope="+encodeURIComponent(scopes)+"&redirect_uri="+encodeURIComponent(spRedirectUri())
+    +"&state="+encodeURIComponent(state)+"&code_challenge_method=S256&code_challenge="+encodeURIComponent(challenge);
+  window.location.href=url;
+});
+$("spDisconnect").addEventListener("click",function(){
+  localStorage.removeItem("cp_spotify_tokens");localStorage.removeItem("cp_spotify_verifier");
+  $("spContent").classList.add("hidden");$("spUser").textContent="";$("spTracks").innerHTML="";$("spPlaylists").innerHTML="";
+  showMsg($("spMsg"),"Disconnected. Your Client ID is kept above so reconnecting is quick.");
+});
+async function spExchangeCode(code){
+  var cid=localStorage.getItem("cp_spotify_client_id")||"";var verifier=localStorage.getItem("cp_spotify_verifier")||"";
+  var body=new URLSearchParams({grant_type:"authorization_code",code:code,redirect_uri:spRedirectUri(),client_id:cid,code_verifier:verifier});
+  var r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
+  var d=await r.json();if(!r.ok)throw new Error(d.error_description||d.error||("Token exchange failed: "+r.status));
+  spSaveTokens({access_token:d.access_token,refresh_token:d.refresh_token,expires_at:Date.now()+(d.expires_in||3600)*1000});
+}
+async function spRefresh(){
+  var t=spTokens();if(!t||!t.refresh_token)throw new Error("Not connected to Spotify.");
+  var cid=localStorage.getItem("cp_spotify_client_id")||"";
+  var body=new URLSearchParams({grant_type:"refresh_token",refresh_token:t.refresh_token,client_id:cid});
+  var r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:body.toString()});
+  var d=await r.json();if(!r.ok)throw new Error(d.error_description||d.error||("Refresh failed: "+r.status));
+  spSaveTokens({access_token:d.access_token,refresh_token:d.refresh_token||t.refresh_token,expires_at:Date.now()+(d.expires_in||3600)*1000});
+  return d.access_token;
+}
+async function spAccessToken(){
+  var t=spTokens();if(!t)throw new Error("Not connected to Spotify.");
+  if(Date.now()>t.expires_at-30000)return spRefresh();return t.access_token;
+}
+async function spFetch(path,opts){
+  opts=opts||{};var token=await spAccessToken();
+  var doFetch=async function(tok){return fetch("https://api.spotify.com"+path,Object.assign({},opts,{headers:Object.assign({"Authorization":"Bearer "+tok},opts.headers||{})}));};
+  var r=await doFetch(token);
+  if(r.status===401){token=await spRefresh();r=await doFetch(token);}
+  if(!r.ok){var txt=await r.text();throw new Error("Spotify "+r.status+": "+txt.slice(0,300));}
+  if(r.status===204)return null;return r.json();
+}
+async function spShowUser(){
+  var me=await spFetch("/v1/me");
+  $("spUser").textContent="Connected as "+(me.display_name||me.id||"you");
+  $("spContent").classList.remove("hidden");
+}
+$("spLoadLiked").addEventListener("click",async function(){
+  try{showMsg($("spMsg"),"Loading your Liked Songs…");var d=await spFetch("/v1/me/tracks?limit=50");renderSpTracks((d.items||[]).map(function(i){return i.track;}).filter(Boolean),"Your Liked Songs (first 50)");showMsg($("spMsg"),"Loaded.");}
+  catch(e){showMsg($("spMsg"),String(e.message||e),true);}
+});
+$("spLoadPlaylists").addEventListener("click",async function(){
+  try{var d=await spFetch("/v1/me/playlists?limit=50");var html="<b>Your playlists</b>";
+    (d.items||[]).forEach(function(p){html+='<div class="track" data-pl="'+esc(p.id)+'"><div class="grow"><div class="t">'+esc(p.name)+'</div><div class="a">'+((p.tracks&&p.tracks.total)||0)+' songs — tap to load</div></div></div>';});
+    $("spPlaylists").innerHTML=html||'<p class="muted">No playlists found.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pl]"),function(el){el.addEventListener("click",async function(){
+      try{var td=await spFetch("/v1/playlists/"+el.getAttribute("data-pl")+"/tracks?limit=50");renderSpTracks((td.items||[]).map(function(i){return i.track;}).filter(Boolean),"Playlist songs (first 50)");}
+      catch(e){showMsg($("spMsg"),String(e.message||e),true);}});});
+  }catch(e){showMsg($("spMsg"),String(e.message||e),true);}
+});
+function renderSpTracks(list,heading){
+  var html="<b>"+esc(heading)+"</b>";
+  list.forEach(function(tr){
+    var artists=(tr.artists||[]).map(function(a){return a.name;}).join(", ");
+    var moods=guessMoods(tr.name,artists,"");
+    var tags=moods.map(function(m){return '<span class="tag">'+esc(m)+"</span>";}).join("");
+    html+='<div class="track"><div class="grow"><div class="t">'+esc(tr.name)+'</div><div class="a">'+esc(artists)+"</div><div>"+tags+'</div></div>'
+      +'<button class="small" data-spplay="'+esc(tr.uri)+'">▶ Play</button>'
+      +'<button class="small" data-spweb="'+esc(tr.uri)+'">Play here*</button></div>';
+  });
+  if(!list.length)html+='<p class="muted">Nothing here yet.</p>';
+  html+='<p class="muted">* Play here needs Spotify Premium. ▶ Play sends it to an active Spotify device.</p>';
+  $("spTracks").innerHTML=html;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-spplay]"),function(el){el.addEventListener("click",function(){spPlayOnDevice(el.getAttribute("data-spplay"));});});
+  Array.prototype.forEach.call(document.querySelectorAll("[data-spweb]"),function(el){el.addEventListener("click",function(){spPlayHere(el.getAttribute("data-spweb"));});});
+}
+async function spPlayOnDevice(uri){
+  try{
+    var devs=await spFetch("/v1/me/player/devices");
+    var active=(devs.devices||[]).filter(function(d){return d.is_active;})[0]||(devs.devices||[])[0];
+    if(!active){showMsg($("spMsg"),"No Spotify device found. Open the Spotify app on your phone once so it becomes an active device, then tap again.",true);return;}
+    var token=await spAccessToken();
+    var r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+encodeURIComponent(active.id),{method:"PUT",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({uris:[uri]})});
+    if(!r.ok&&r.status!==204)throw new Error("Play failed: "+r.status+" "+(await r.text()).slice(0,200));
+    showMsg($("spMsg"),"Playing on: "+(active.name||"your Spotify device")+" ("+(active.type||"device")+")");
+  }catch(e){showMsg($("spMsg"),String(e.message||e),true);}
+}
+var spPlayer=null,spDeviceId=null;
+function spPlayHere(uri){
+  showMsg($("spMsg"),"Loading Spotify web player… (needs Premium)");
+  var start=function(){
+    window.onSpotifyWebPlaybackSDKReady=async function(){
+      try{
+        var token=await spAccessToken();
+        spPlayer=new Spotify.Player({name:"Culture Player",getOAuthToken:function(cb){spAccessToken().then(cb).catch(function(){cb(token);});},volume:0.9});
+        spPlayer.addListener("ready",async function(ev){
+          spDeviceId=ev.device_id;
+          try{var tok=await spAccessToken();await fetch("https://api.spotify.com/v1/me/player",{method:"PUT",headers:{"Authorization":"Bearer "+tok,"Content-Type":"application/json"},body:JSON.stringify({device_ids:[spDeviceId],play:false})});
+            var tok2=await spAccessToken();var r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+encodeURIComponent(spDeviceId),{method:"PUT",headers:{"Authorization":"Bearer "+tok2,"Content-Type":"application/json"},body:JSON.stringify({uris:[uri]})});
+            if(!r.ok&&r.status!==204)throw new Error("Play here failed: "+r.status);
+            showMsg($("spMsg"),"Playing here in Culture Player.");
+          }catch(e){showMsg($("spMsg"),String(e.message||e)+" — in-browser playback needs Spotify Premium.",true);}
+        });
+        spPlayer.addListener("account_error",function(ev){showMsg($("spMsg"),"Spotify account error: "+ev.message+" — in-browser playback needs Premium.",true);});
+        spPlayer.addListener("initialization_error",function(ev){showMsg($("spMsg"),"Player init error: "+ev.message,true);});
+        spPlayer.connect();
+      }catch(e){showMsg($("spMsg"),String(e.message||e),true);}
+    };
+    if(window.Spotify&&window.Spotify.Player){window.onSpotifyWebPlaybackSDKReady();}
+  };
+  if(window.Spotify&&window.Spotify.Player){start();return;}
+  window.onSpotifyWebPlaybackSDKReady=null;start();
+  var sc=document.createElement("script");sc.src="https://sdk.scdn.co/spotify-player.js";sc.async=true;
+  sc.onerror=function(){showMsg($("spMsg"),"Could not load the Spotify player script. Check your data connection and try again.",true);};
+  document.body.appendChild(sc);
+}
+/* handle ?code= return + restore session */
+(async function(){
+  var params=new URLSearchParams(window.location.search);var code=params.get("code");var err=params.get("error");
+  if(err){showMsg($("spMsg"),"Spotify login was cancelled or failed: "+err,true);history.replaceState({},document.title,spRedirectUri());return;}
+  if(code){
+    try{showMsg($("spMsg"),"Finishing Spotify login…");await spExchangeCode(code);history.replaceState({},document.title,spRedirectUri());await spShowUser();showMsg($("spMsg"),"Spotify connected.");}
+    catch(e){showMsg($("spMsg"),String(e.message||e),true);history.replaceState({},document.title,spRedirectUri());}
+    return;
+  }
+  if(spTokens()){try{await spShowUser();}catch(e){/* token may be stale; user can reconnect */}}
+})();
+</script>
+</body>
+</html>
